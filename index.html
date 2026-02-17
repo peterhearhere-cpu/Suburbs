@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Suburb Tracker GT</title>
+    <title>Suburb Tracker Silent</title>
     <style>
         /* --- STYLING (CSS) --- */
         body {
@@ -12,8 +12,7 @@
             font-family: Arial, Helvetica, sans-serif;
             text-align: center;
             margin: 0;
-            /* Extra spacing at the top */
-            padding-top: 50px; 
+            padding-top: 40px; 
             display: flex;
             flex-direction: column;
             align-items: center;
@@ -24,11 +23,11 @@
         /* CONTROLS CONTAINER */
         .controls {
             width: 100%;
-            margin-bottom: 25px;
+            margin-bottom: 20px;
         }
 
-        /* VOICE BUTTON */
-        #voice-btn {
+        /* JOURNEY LIST BUTTON */
+        #list-btn {
             background-color: #333;
             color: #fff;
             border: 2px solid #555;
@@ -39,33 +38,32 @@
             box-shadow: 0 4px 10px rgba(255,255,255,0.1);
             transition: all 0.3s ease;
         }
-        #voice-btn.active {
-            background-color: #007bff; /* Blue */
-            border-color: #0056b3;
-            box-shadow: 0 0 20px rgba(0, 123, 255, 0.5);
+        #list-btn:active {
+            background-color: #555;
+            transform: scale(0.98);
         }
 
-        /* COUNCIL BADGE */
+        /* COUNCIL BADGE - DOUBLED SIZE */
         #council-badge {
-            font-size: 0.9rem;
+            font-size: 2.0rem; /* Increased from 0.9rem */
             font-weight: bold;
             text-transform: uppercase;
             letter-spacing: 2px;
             color: #aaa;
-            border: 1px solid #444;
-            padding: 8px 15px;
-            border-radius: 8px;
+            border: 2px solid #444;
+            padding: 10px 20px;
+            border-radius: 12px;
             margin-bottom: 20px;
             background-color: #111;
             display: inline-block;
-            min-width: 200px;
+            min-width: 250px;
         }
 
         /* SPEED DISPLAY */
         #speed-box {
             font-size: 2.5rem;
             font-weight: bold;
-            color: #00ff00; /* Green */
+            color: #00ff00;
             margin-bottom: 20px;
             text-shadow: 0 0 10px rgba(0, 255, 0, 0.3);
         }
@@ -89,45 +87,59 @@
         }
 
         .icon-display {
-            font-size: 6rem;
+            font-size: 7rem;
             margin-bottom: 5px;
             display: flex;
             justify-content: center;
             align-items: center;
-            height: 110px;
+            height: 120px;
             transition: filter 0.5s ease;
         }
 
-        /* HISTORY LIST */
-        #history-box {
-            font-size: 1.1rem;
-            color: #666;
-            border-top: 1px solid #333;
-            padding-top: 15px;
-            width: 90%;
-            min-height: 120px;
+        /* HIDDEN HISTORY LIST (OVERLAY) */
+        #history-overlay {
+            display: none; /* Hidden by default */
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.95);
+            z-index: 100;
+            overflow-y: auto;
+            padding-top: 60px;
+            flex-direction: column;
+            align-items: center;
         }
+
+        #close-history-btn {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            font-size: 2rem;
+            color: #fff;
+            background: none;
+            border: none;
+            cursor: pointer;
+        }
+
         .history-item {
-            margin: 8px 0;
+            font-size: 1.5rem;
+            padding: 15px;
+            border-bottom: 1px solid #333;
+            width: 80%;
             display: flex;
             justify-content: space-between;
-            border-bottom: 1px solid #222;
-            padding-bottom: 4px;
-        }
-        .history-time {
-            font-size: 0.8rem;
-            color: #444;
-            align-self: flex-end;
         }
     </style>
 </head>
 <body onclick="requestWakeLock()">
 
     <div class="controls">
-        <button id="voice-btn" class="active" onclick="toggleVoice(event)">🔊 Voice: ON</button>
+        <button id="list-btn" onclick="toggleHistory(event)">Show History 📜</button>
     </div>
     
-    <div id="council-badge">WAITING FOR GPS...</div>
+    <div id="council-badge">WAITING...</div>
 
     <div id="speed-box">0 km/h</div>
     
@@ -136,36 +148,23 @@
         <div class="suburb-name">Locating...</div>
     </div>
 
-    <div id="history-box"></div>
+    <div id="history-overlay">
+        <button id="close-history-btn" onclick="toggleHistory(event)">✖</button>
+        <h2 style="color:white; border-bottom: 1px solid #555; padding-bottom:10px;">JOURNEY LOG</h2>
+        <div id="history-content"></div>
+    </div>
 
     <script>
         // --- DATASETS ---
         const suburbIcons = {
             // Baw Baw / Gippsland
-            "Drouin": "🌳",         // Trees/Ficifolia
-            "Warragul": "🐄",       // Dairy
-            "Longwarry": "🛤️",      // Railway
-            "Bunyip": "🔥",         // Bunyip (Mythical/Fire)
-            
+            "Drouin": "🌳", "Warragul": "🐄", "Longwarry": "🛤️", "Bunyip": "🔥",
             // Cardinia / Casey
-            "Lang Lang": "🚜",      
-            "Tooradin": "🌿",       
-            "Koo Wee Rup": "🥔",    
-            "Cranbourne": "🏇",     // Horses/Racing
-            
+            "Lang Lang": "🚜", "Tooradin": "🌿", "Koo Wee Rup": "🥔", "Cranbourne": "🏇",
             // Bayside / Kingston
-            "Chelsea": "🏖️",
-            "Aspendale": "🏊",
-            "Edithvale": "🦆",
-            "Bonbeach": "🏄",
-            "Carrum": "🌉",
-            "Seaford": "🌲",
-            "Frankston": "🏙️",
-            "Mordialloc": "⛵",
-            "Mentone": "🏫",
-            "Parkdale": "☕",
-            "Moorabbin": getStKildaStickman(),
-            
+            "Chelsea": "🏖️", "Aspendale": "🏊", "Edithvale": "🦆", "Bonbeach": "🏄",
+            "Carrum": "🌉", "Seaford": "🌲", "Frankston": "🏙️", "Mordialloc": "⛵",
+            "Mentone": "🏫", "Parkdale": "☕", "Moorabbin": getStKildaStickman(),
             "Default": "📍"
         };
 
@@ -184,9 +183,11 @@
         // --- VARIABLES ---
         let lastSuburb = "";
         let suburbHistory = [];
-        let voiceEnabled = true;
         let wakeLock = null;
-        const synth = window.speechSynthesis;
+        
+        // Anti-Flicker Variables
+        let lastUpdateTime = 0;
+        const MIN_UPDATE_DELAY = 30000; // 30 Seconds in milliseconds
 
         // --- GPS START ---
         if ("geolocation" in navigator) {
@@ -196,7 +197,7 @@
             });
         }
 
-        // --- WAKE LOCK (SCREEN ON) ---
+        // --- WAKE LOCK ---
         async function requestWakeLock() {
             if (!('wakeLock' in navigator)) return;
             try {
@@ -204,34 +205,35 @@
                     wakeLock = await navigator.wakeLock.request('screen');
                     console.log('Screen Wake Lock Active');
                 }
-            } catch (err) {
-                console.log(err.name, err.message);
-            }
+            } catch (err) { console.log(err); }
         }
         
-        // Re-request lock if user switches apps and comes back
         document.addEventListener("visibilitychange", async () => {
             if (wakeLock !== null && document.visibilityState === "visible") {
                 wakeLock = await navigator.wakeLock.request('screen');
             }
         });
 
-        // --- VOICE TOGGLE ---
-        function toggleVoice(event) {
-            event.stopPropagation(); // Prevent double-triggering body click
-            requestWakeLock(); // Ensure screen stays on
-            
-            voiceEnabled = !voiceEnabled;
-            const btn = document.getElementById('voice-btn');
-            
-            if (voiceEnabled) {
-                btn.innerText = "🔊 Voice: ON";
-                btn.classList.add("active");
-                synth.speak(new SpeechSynthesisUtterance("Voice Active"));
+        // --- HISTORY TOGGLE ---
+        function toggleHistory(event) {
+            event.stopPropagation();
+            const overlay = document.getElementById('history-overlay');
+            if (overlay.style.display === "flex") {
+                overlay.style.display = "none";
             } else {
-                btn.innerText = "🔇 Voice: OFF";
-                btn.classList.remove("active");
+                renderHistory();
+                overlay.style.display = "flex";
             }
+        }
+
+        function renderHistory() {
+            const container = document.getElementById('history-content');
+            container.innerHTML = suburbHistory.map(item => 
+                `<div class="history-item" style="border-left: 5px solid ${item.color};">
+                    <span style="color: ${item.color}">${item.name}</span>
+                    <span style="color: #888; font-size: 1rem;">${item.time}</span>
+                </div>`
+            ).join('');
         }
 
         // --- UPDATE LOGIC ---
@@ -240,13 +242,19 @@
             const speedKmh = position.coords.speed ? Math.round(position.coords.speed * 3.6) : 0;
             document.getElementById('speed-box').innerText = speedKmh + " km/h";
 
-            // Location
+            // Check if we are in the "Lock-out" period
+            const now = Date.now();
+            if (now - lastUpdateTime < MIN_UPDATE_DELAY) {
+                return; // Too soon! Ignore this GPS update to prevent flickering
+            }
+
+            // Location Lookup
             const lat = position.coords.latitude;
             const lon = position.coords.longitude;
             const url = `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}&zoom=14`;
 
             try {
-                const response = await fetch(url, { headers: { 'User-Agent': 'GrandpaPeteGT/4.0' } });
+                const response = await fetch(url, { headers: { 'User-Agent': 'GrandpaPeteSilent/5.0' } });
                 const data = await response.json();
                 
                 let rawSuburb = data.address.suburb || data.address.town || data.address.village || "Unknown";
@@ -255,6 +263,7 @@
                 if (cleanSuburb !== lastSuburb && cleanSuburb !== "Unknown") {
                     updateDisplay(cleanSuburb);
                     lastSuburb = cleanSuburb;
+                    lastUpdateTime = Date.now(); // Start the 30-second timer
                 }
             } catch (error) { console.log("GPS Error"); }
         }
@@ -262,14 +271,14 @@
         function updateDisplay(suburbName) {
             // Lookup
             const icon = suburbIcons[suburbName] || suburbIcons["Default"];
-            const council = councilMap[suburbName] || "UNKNOWN COUNCIL";
+            const council = councilMap[suburbName] || "UNKNOWN"; // Shortened fallback
 
             // Colors
             const colors = ["#FFD700", "#00FFFF", "#FF69B4", "#ADFF2F", "#FFA500", "#FFFFFF"];
             const randomColor = colors[Math.floor(Math.random() * colors.length)];
             
             // DOM Update
-            document.getElementById('council-badge').innerText = "COUNCIL: " + council;
+            document.getElementById('council-badge').innerText = council;
             
             const subNameEl = document.querySelector('.suburb-name');
             const iconEl = document.querySelector('.icon-display');
@@ -280,32 +289,15 @@
             iconEl.innerHTML = icon;
             iconEl.style.filter = `hue-rotate(${Math.floor(Math.random() * 360)}deg)`;
 
-            // Audio
-            if (voiceEnabled) {
-                synth.cancel();
-                const utterance = new SpeechSynthesisUtterance("Now entering " + suburbName);
-                synth.speak(utterance);
-            }
-
-            // History
-            addToHistory(suburbName, randomColor);
+            // Add to History Data (But don't show it yet)
+            addToHistoryData(suburbName, randomColor);
         }
 
-        function addToHistory(suburb, color) {
+        function addToHistoryData(suburb, color) {
             const now = new Date();
             const timeString = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-            
+            // Add to top of list
             suburbHistory.unshift({ name: suburb, time: timeString, color: color });
-            if (suburbHistory.length > 4) suburbHistory.pop();
-            
-            const html = suburbHistory.map(item => 
-                `<div class="history-item" style="border-left: 4px solid ${item.color}; padding-left: 10px;">
-                    <span style="color: ${item.color}">${item.name}</span>
-                    <span class="history-time">${item.time}</span>
-                </div>`
-            ).join('');
-            
-            document.getElementById('history-box').innerHTML = html;
         }
 
         function toTitleCase(str) {
@@ -314,7 +306,7 @@
 
         function getStKildaStickman() {
             return `
-            <svg width="100" height="100" viewBox="0 0 100 100">
+            <svg width="120" height="120" viewBox="0 0 100 100">
                 <circle cx="50" cy="15" r="10" stroke="#FFD700" stroke-width="2" fill="none" />
                 <circle cx="50" cy="35" r="12" fill="white" stroke="red" stroke-width="3"/>
                 <line x1="50" y1="47" x2="50" y2="80" stroke="white" stroke-width="5" />
