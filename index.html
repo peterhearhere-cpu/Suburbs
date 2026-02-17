@@ -1,108 +1,159 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <title>Grandpa Pete's Tracker</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Suburb Tracker</title>
     <style>
-        body { 
-            font-family: sans-serif; 
-            display: flex; 
-            flex-direction: column; 
-            align-items: center; 
-            justify-content: center; 
-            height: 100vh; 
-            margin: 0; 
-            background: #000000; 
-            color: #00FF00; 
-            transition: color 0.5s ease;
-            overflow: hidden;
+        /* --- STYLING (CSS) --- */
+        body {
+            background-color: #000000; /* Pure black for high contrast */
+            color: #ffffff;
+            font-family: 'Courier New', monospace; /* Retro digital look */
+            text-align: center;
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            overflow: hidden; /* Prevents scrolling */
         }
-        #suburb-display { font-size: 4.5rem; font-weight: bold; text-align: center; padding: 10px; line-height: 1.1; }
-        #speed-display { font-size: 2.2rem; margin-top: 5px; color: #ffffff; opacity: 0.9; }
-        #history-display { font-size: 1.2rem; margin-top: 20px; color: #888; text-align: center; }
-        .history-item { margin: 3px 0; }
-        .btn { padding: 15px 30px; font-size: 1.2rem; background: #222; color: white; border: 2px solid currentColor; border-radius: 10px; margin: 10px; cursor: pointer; }
-        #controls { position: absolute; bottom: 20px; display: flex; flex-direction: column; align-items: center; }
+
+        #speed-box {
+            font-size: 2.5rem;
+            color: #00ff00; /* Bright Green for speed */
+            margin-bottom: 20px;
+        }
+
+        #suburb-display {
+            font-size: 4rem;
+            font-weight: bold;
+            color: #ffffff;
+            text-transform: uppercase;
+            line-height: 1.2;
+            margin-bottom: 30px;
+        }
+
+        #history-box {
+            font-size: 1.2rem;
+            color: #888888;
+            border-top: 1px solid #333;
+            padding-top: 20px;
+            width: 80%;
+        }
+
+        .history-item {
+            margin: 5px 0;
+        }
+
+        /* A distinct color for the icon to make it pop */
+        .icon {
+            font-style: normal;
+        }
     </style>
 </head>
 <body>
-    <div id="suburb-display">READY?</div>
-    <div id="speed-display" style="display:none;">0 km/h</div>
-    <div id="history-display"></div>
 
-    <div id="controls">
-        <button class="btn" id="startBtn" onclick="start()">START TRACKING</button>
-        <button class="btn" id="voiceBtn" onclick="toggleVoice()" style="display:none;">VOICE OFF</button>
-    </div>
+    <div id="speed-box">0 km/h</div>
+    <div id="suburb-display">LOCATING...</div>
+    <div id="history-box">
+        </div>
 
     <script>
-        let lastSuburb = "";
-        let voiceEnabled = false;
-        let history = [];
-        const colors = ['#00FF00', '#00FFFF', '#FF00FF', '#FFFF00', '#FF8000', '#FF3333', '#33FF33'];
-        let colorIndex = 0;
+        // --- CONFIGURATION: EDIT YOUR ICONS HERE ---
+        const suburbIcons = {
+            "Chelsea": "🏖️",        // Beach
+            "Aspendale": "🏊",      // Swimming/Beach
+            "Edithvale": "🦆",      // Wetlands
+            "Bonbeach": "🏄",       // Surfing
+            "Carrum": "🌉",         // The Bridge
+            "Seaford": "🌲",        // Trees/Foreshore
+            "Frankston": "🏙️",      // City skyline
+            "Mordialloc": "⛵",     // Boats/Creek
+            "Mentone": "🏫",        // Schools/Historic
+            "Parkdale": "☕",       // Cafes
+            "Default": "📍"         // Fallback if unknown
+        };
 
-        function toggleVoice() {
-            voiceEnabled = !voiceEnabled;
-            document.getElementById('voiceBtn').innerText = voiceEnabled ? "VOICE ON" : "VOICE OFF";
+        // --- VARIABLES ---
+        let lastSuburb = "";
+        let suburbHistory = [];
+        const synth = window.speechSynthesis;
+
+        // --- GPS TRACKING ---
+        if ("geolocation" in navigator) {
+            navigator.geolocation.watchPosition(updateLocation, console.error, {
+                enableHighAccuracy: true,
+                maximumAge: 1000
+            });
+        } else {
+            document.getElementById('suburb-display').innerText = "NO GPS";
         }
 
-        function speak(text) {
-            if (voiceEnabled) {
-                const msg = new SpeechSynthesisUtterance("Now entering " + text);
-                window.speechSynthesis.speak(msg);
+        // --- MAIN FUNCTION ---
+        async function updateLocation(position) {
+            // 1. Update Speed
+            const speedKmh = position.coords.speed ? Math.round(position.coords.speed * 3.6) : 0;
+            document.getElementById('speed-box').innerText = speedKmh + " km/h";
+
+            // 2. Get Suburb Name (Reverse Geocoding)
+            // We throttle this to run only every few seconds to be nice to the API
+            const lat = position.coords.latitude;
+            const lon = position.coords.longitude;
+            
+            // Using OpenStreetMap (Nominatim) - Free and easy
+            const url = `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}&zoom=14`;
+
+            try {
+                const response = await fetch(url, { headers: { 'User-Agent': 'GrandpaPeteSuburbTracker/1.0' } });
+                const data = await response.json();
+                
+                // Extract suburb name safely
+                let currentSuburb = data.address.suburb || data.address.town || data.address.city_district || "Unknown";
+
+                // Only update if the suburb has CHANGED
+                if (currentSuburb !== lastSuburb && currentSuburb !== "Unknown") {
+                    updateDisplay(currentSuburb);
+                    lastSuburb = currentSuburb;
+                }
+
+            } catch (error) {
+                console.log("GPS fetch error: " + error);
             }
         }
 
-        function changeColor() {
-            colorIndex = (colorIndex + 1) % colors.length;
-            document.body.style.color = colors[colorIndex];
+        // --- DISPLAY & LOGIC ---
+        function updateDisplay(suburbName) {
+            // 1. Find the Icon
+            const icon = suburbIcons[suburbName] || suburbIcons["Default"];
+
+            // 2. Update Screen
+            const displayElement = document.getElementById('suburb-display');
+            displayElement.innerHTML = `<span class="icon">${icon}</span><br>${suburbName}`;
+            
+            // Random High-Contrast Color for excitement
+            const colors = ["#FFD700", "#00FFFF", "#FF69B4", "#ADFF2F", "#FFFFFF"];
+            displayElement.style.color = colors[Math.floor(Math.random() * colors.length)];
+
+            // 3. Speak the Name
+            const utterance = new SpeechSynthesisUtterance(suburbName);
+            synth.speak(utterance);
+
+            // 4. Update History
+            updateHistory(suburbName);
         }
 
         function updateHistory(suburb) {
-            if (lastSuburb && lastSuburb !== "FINDING..." && lastSuburb !== "Unknown") {
-                history.unshift(lastSuburb); // Add old suburb to start of list
-                if (history.length > 3) history.pop(); // Keep only last 3
-                
-                let html = "";
-                history.forEach(item => {
-                    html += `<div class="history-item">prev: ${item}</div>`;
-                });
-                document.getElementById('history-display').innerHTML = html;
-            }
-        }
-
-        async function start() {
-            document.getElementById('startBtn').style.display = 'none';
-            document.getElementById('voiceBtn').style.display = 'block';
-            document.getElementById('speed-display').style.display = 'block';
-            document.getElementById('suburb-display').innerText = "FINDING...";
+            suburbHistory.unshift(suburb); // Add to top of list
+            if (suburbHistory.length > 3) suburbHistory.pop(); // Keep only last 3
             
-            if ('wakeLock' in navigator) {
-                try { await navigator.wakeLock.request('screen'); } catch (err) {}
-            }
-
-            navigator.geolocation.watchPosition(async (pos) => {
-                const speedMS = pos.coords.speed || 0;
-                const speedKMH = Math.round(speedMS * 3.6);
-                document.getElementById('speed-display').innerText = speedKMH + " km/h";
-
-                try {
-                    const res = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${pos.coords.latitude}&lon=${pos.coords.longitude}&zoom=18`);
-                    const data = await res.json();
-                    const suburb = data.address.suburb || data.address.town || data.address.village || "Unknown";
-                    
-                    if (suburb !== lastSuburb) {
-                        updateHistory(suburb);
-                        document.getElementById('suburb-display').innerText = suburb;
-                        changeColor();
-                        speak(suburb);
-                        lastSuburb = suburb;
-                    }
-                } catch (e) { console.log("Fetch error"); }
-            }, (err) => { 
-                document.getElementById('suburb-display').innerText = "GPS ERROR"; 
-            }, { enableHighAccuracy: true, maximumAge: 0, timeout: 10000 });
+            const historyHTML = suburbHistory.map(s => 
+                `<div class="history-item">${s}</div>`
+            ).join('');
+            
+            document.getElementById('history-box').innerHTML = historyHTML;
         }
     </script>
 </body>
