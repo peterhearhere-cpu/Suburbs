@@ -3,13 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Suburb Tracker</title>
+    <title>Suburb Tracker Pro</title>
     <style>
         /* --- STYLING (CSS) --- */
         body {
-            background-color: #000000; /* Pure black background */
+            background-color: #000000;
             color: #ffffff;
-            font-family: Arial, Helvetica, sans-serif; /* Clean, bold, easy to read */
+            font-family: Arial, Helvetica, sans-serif;
             text-align: center;
             margin: 0;
             padding: 10px;
@@ -26,43 +26,69 @@
             color: #fff;
             border: 1px solid #555;
             padding: 10px 20px;
-            font-size: 1.2rem;
+            font-size: 1rem;
             border-radius: 5px;
-            margin-bottom: 20px;
+            margin-bottom: 10px;
             width: 80%;
             cursor: pointer;
         }
         #voice-btn.active {
-            background-color: #007bff; /* Blue when ON */
+            background-color: #007bff;
             border-color: #0056b3;
+        }
+
+        /* COUNCIL BADGE */
+        #council-badge {
+            font-size: 0.9rem;
+            font-weight: bold;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            color: #ccc;
+            border: 1px solid #555;
+            padding: 5px 15px;
+            border-radius: 20px;
+            margin-bottom: 10px;
+            background-color: #1a1a1a;
+            display: inline-block;
+            min-width: 150px;
         }
 
         /* SPEED DISPLAY */
         #speed-box {
             font-size: 2.5rem;
             font-weight: bold;
-            color: #00ff00; /* Bright Green */
+            color: #00ff00;
             margin-bottom: 10px;
         }
 
         /* SUBURB DISPLAY */
         #suburb-display {
-            font-size: 3.5rem;
-            font-weight: 900; /* Extra Bold */
-            color: #ffffff;
-            text-transform: uppercase;
-            line-height: 1.1;
-            margin-bottom: 20px;
-            flex-grow: 1; /* Pushes history to bottom */
+            flex-grow: 1;
             display: flex;
             flex-direction: column;
             justify-content: center;
+            align-items: center;
         }
 
-        /* ICONS */
+        /* TEXT STYLING */
+        .suburb-name {
+            font-size: 3.5rem;
+            font-weight: 900;
+            color: #ffffff;
+            line-height: 1.1;
+            /* Ensures "Title Case" (First letter big, rest small) */
+            text-transform: capitalize; 
+        }
+
+        /* ICON STYLING */
         .icon-display {
             font-size: 5rem;
             margin-bottom: 10px;
+            /* Flex center for SVG handling */
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100px; 
         }
 
         /* HISTORY LIST */
@@ -79,140 +105,4 @@
             display: flex;
             justify-content: space-between;
         }
-        .history-time {
-            font-size: 0.8rem;
-            color: #555;
-        }
-    </style>
-</head>
-<body>
-
-    <button id="voice-btn" class="active" onclick="toggleVoice()">🔊 Voice: ON</button>
-
-    <div id="speed-box">0 km/h</div>
-    
-    <div id="suburb-display">
-        <div class="icon-display">🛰️</div>
-        <div>LOCATING...</div>
-    </div>
-
-    <div id="history-box">
-        </div>
-
-    <script>
-        // --- ICONS CONFIGURATION ---
-        // Added Lang Lang (Tractor) and Tooradin (Closest to Mangrove)
-        const suburbIcons = {
-            "Lang Lang": "🚜",      // Tractor
-            "Tooradin": "🌿",       // Mangrove/Wetland Proxy
-            "Koo Wee Rup": "🥔",    // Potato farming (Optional extra!)
-            "Chelsea": "🏖️",
-            "Aspendale": "🏊",
-            "Edithvale": "🦆",
-            "Bonbeach": "🏄",
-            "Carrum": "🌉",
-            "Seaford": "🌲",
-            "Frankston": "🏙️",
-            "Mordialloc": "⛵",
-            "Mentone": "🏫",
-            "Parkdale": "☕",
-            "Default": "📍"
-        };
-
-        // --- VARIABLES ---
-        let lastSuburb = "";
-        let suburbHistory = [];
-        let voiceEnabled = true;
-        const synth = window.speechSynthesis;
-
-        // --- GPS TRACKING ---
-        if ("geolocation" in navigator) {
-            navigator.geolocation.watchPosition(updateLocation, console.error, {
-                enableHighAccuracy: true,
-                maximumAge: 1000
-            });
-        } else {
-            document.querySelector('#suburb-display div:last-child').innerText = "NO GPS";
-        }
-
-        // --- VOICE TOGGLE ---
-        function toggleVoice() {
-            voiceEnabled = !voiceEnabled;
-            const btn = document.getElementById('voice-btn');
-            if (voiceEnabled) {
-                btn.innerText = "🔊 Voice: ON";
-                btn.classList.add("active");
-            } else {
-                btn.innerText = "🔇 Voice: OFF";
-                btn.classList.remove("active");
-            }
-        }
-
-        // --- MAIN LOGIC ---
-        async function updateLocation(position) {
-            // 1. Speed
-            const speedKmh = position.coords.speed ? Math.round(position.coords.speed * 3.6) : 0;
-            document.getElementById('speed-box').innerText = speedKmh + " km/h";
-
-            // 2. Suburb Lookup
-            const lat = position.coords.latitude;
-            const lon = position.coords.longitude;
-            // Nominatim OpenStreetMap API
-            const url = `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}&zoom=14`;
-
-            try {
-                // Throttle: In a real app we'd limit this, but for testing it's okay
-                const response = await fetch(url, { headers: { 'User-Agent': 'GrandpaPeteTracker/2.0' } });
-                const data = await response.json();
-                
-                let currentSuburb = data.address.suburb || data.address.town || data.address.hamlet || "Unknown";
-
-                if (currentSuburb !== lastSuburb && currentSuburb !== "Unknown") {
-                    updateDisplay(currentSuburb);
-                    lastSuburb = currentSuburb;
-                }
-
-            } catch (error) {
-                console.log("GPS fetch error: " + error);
-            }
-        }
-
-        function updateDisplay(suburbName) {
-            // Icon
-            const icon = suburbIcons[suburbName] || suburbIcons["Default"];
-            
-            // Update HTML
-            document.getElementById('suburb-display').innerHTML = `
-                <div class="icon-display">${icon}</div>
-                <div>${suburbName}</div>
-            `;
-
-            // Voice
-            if (voiceEnabled) {
-                const utterance = new SpeechSynthesisUtterance(suburbName);
-                synth.speak(utterance);
-            }
-
-            // History
-            addToHistory(suburbName);
-        }
-
-        function addToHistory(suburb) {
-            const now = new Date();
-            const timeString = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-            
-            suburbHistory.unshift({ name: suburb, time: timeString });
-            if (suburbHistory.length > 4) suburbHistory.pop(); // Keep last 4
-            
-            const historyHTML = suburbHistory.map(item => 
-                `<div class="history-item">
-                    <span>${item.name}</span>
-                    <span class="history-time">${item.time}</span>
-                </div>`
-            ).join('');
-            
-            document.getElementById('history-box').innerHTML = historyHTML;
-        }
-    </script>
-</body>
-</html>
+        .history
