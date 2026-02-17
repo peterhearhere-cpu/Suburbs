@@ -105,4 +105,197 @@
             display: flex;
             justify-content: space-between;
         }
-        .history
+        .history-time {
+            font-size: 0.8rem;
+            color: #555;
+        }
+    </style>
+</head>
+<body>
+
+    <button id="voice-btn" class="active" onclick="toggleVoice()">🔊 Voice: ON</button>
+    
+    <div id="council-badge">Waiting for GPS...</div>
+
+    <div id="speed-box">0 km/h</div>
+    
+    <div id="suburb-display">
+        <div class="icon-display">🛰️</div>
+        <div class="suburb-name">Locating...</div>
+    </div>
+
+    <div id="history-box">
+        </div>
+
+    <script>
+        // --- DATA LOOKUPS ---
+
+        // 1. ICONS
+        const suburbIcons = {
+            "Lang Lang": "🚜",      
+            "Tooradin": "🌿",       
+            "Koo Wee Rup": "🥔",    
+            "Chelsea": "🏖️",
+            "Aspendale": "🏊",
+            "Edithvale": "🦆",
+            "Bonbeach": "🏄",
+            "Carrum": "🌉",
+            "Seaford": "🌲",
+            "Frankston": "🏙️",
+            "Mordialloc": "⛵",
+            "Mentone": "🏫",
+            "Parkdale": "☕",
+            "Moorabbin": getStKildaStickman(), // Special SVG Function
+            "Default": "📍"
+        };
+
+        // 2. COUNCIL MAP (Add more here as you need)
+        const councilMap = {
+            "Chelsea": "Kingston",
+            "Aspendale": "Kingston",
+            "Edithvale": "Kingston",
+            "Bonbeach": "Kingston",
+            "Carrum": "Kingston",
+            "Mordialloc": "Kingston",
+            "Mentone": "Kingston",
+            "Parkdale": "Kingston",
+            "Moorabbin": "Kingston",
+            "Highett": "Kingston",
+            "Clarinda": "Kingston",
+            "Seaford": "Frankston",
+            "Frankston": "Frankston",
+            "Langwarrin": "Frankston",
+            "Skye": "Frankston",
+            "Lang Lang": "Cardinia",
+            "Koo Wee Rup": "Cardinia",
+            "Tooradin": "Casey",
+            "Cranbourne": "Casey",
+            "Pearcedale": "Casey",
+            "Cannons Creek": "Casey"
+        };
+
+        // --- VARIABLES ---
+        let lastSuburb = "";
+        let suburbHistory = [];
+        let voiceEnabled = true;
+        const synth = window.speechSynthesis;
+
+        // --- GPS TRACKING ---
+        if ("geolocation" in navigator) {
+            navigator.geolocation.watchPosition(updateLocation, console.error, {
+                enableHighAccuracy: true,
+                maximumAge: 1000
+            });
+        } else {
+            document.querySelector('.suburb-name').innerText = "NO GPS";
+        }
+
+        // --- FUNCTIONS ---
+
+        function toggleVoice() {
+            voiceEnabled = !voiceEnabled;
+            const btn = document.getElementById('voice-btn');
+            if (voiceEnabled) {
+                btn.innerText = "🔊 Voice: ON";
+                btn.classList.add("active");
+            } else {
+                btn.innerText = "🔇 Voice: OFF";
+                btn.classList.remove("active");
+            }
+        }
+
+        async function updateLocation(position) {
+            // Speed
+            const speedKmh = position.coords.speed ? Math.round(position.coords.speed * 3.6) : 0;
+            document.getElementById('speed-box').innerText = speedKmh + " km/h";
+
+            // Suburb
+            const lat = position.coords.latitude;
+            const lon = position.coords.longitude;
+            const url = `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}&zoom=14`;
+
+            try {
+                const response = await fetch(url, { headers: { 'User-Agent': 'GrandpaPeteTracker/2.0' } });
+                const data = await response.json();
+                
+                let rawSuburb = data.address.suburb || data.address.town || data.address.hamlet || "Unknown";
+                
+                // Convert to Title Case (e.g. "LANG LANG" -> "Lang Lang")
+                let cleanSuburb = toTitleCase(rawSuburb);
+
+                if (cleanSuburb !== lastSuburb && cleanSuburb !== "Unknown") {
+                    updateDisplay(cleanSuburb);
+                    lastSuburb = cleanSuburb;
+                }
+
+            } catch (error) {
+                console.log("GPS fetch error: " + error);
+            }
+        }
+
+        function updateDisplay(suburbName) {
+            // 1. Get Icon
+            const icon = suburbIcons[suburbName] || suburbIcons["Default"];
+            
+            // 2. Get Council
+            const council = councilMap[suburbName] || "Unknown Council";
+
+            // 3. Update HTML
+            document.getElementById('council-badge').innerText = "COUNCIL: " + council;
+            
+            document.getElementById('suburb-display').innerHTML = `
+                <div class="icon-display">${icon}</div>
+                <div class="suburb-name">${suburbName}</div>
+            `;
+
+            // 4. Voice
+            if (voiceEnabled) {
+                const utterance = new SpeechSynthesisUtterance("Entering " + suburbName);
+                synth.speak(utterance);
+            }
+
+            // 5. History
+            addToHistory(suburbName);
+        }
+
+        function addToHistory(suburb) {
+            const now = new Date();
+            const timeString = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+            
+            suburbHistory.unshift({ name: suburb, time: timeString });
+            if (suburbHistory.length > 4) suburbHistory.pop();
+            
+            const historyHTML = suburbHistory.map(item => 
+                `<div class="history-item">
+                    <span>${item.name}</span>
+                    <span class="history-time">${item.time}</span>
+                </div>`
+            ).join('');
+            
+            document.getElementById('history-box').innerHTML = historyHTML;
+        }
+
+        // Helper: Force Title Case
+        function toTitleCase(str) {
+            return str.toLowerCase().split(' ').map(function(word) {
+                return word.charAt(0).toUpperCase() + word.slice(1);
+            }).join(' ');
+        }
+
+        // Helper: The Custom St Kilda Stickman SVG
+        function getStKildaStickman() {
+            return `
+            <svg width="80" height="80" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+                <ellipse cx="50" cy="15" rx="20" ry="5" stroke="yellow" stroke-width="3" fill="none" />
+                <circle cx="50" cy="35" r="10" fill="white" stroke="red" stroke-width="2"/>
+                <line x1="50" y1="45" x2="50" y2="75" stroke="white" stroke-width="4" />
+                <line x1="30" y1="55" x2="70" y2="55" stroke="white" stroke-width="4" />
+                <line x1="50" y1="75" x2="35" y2="95" stroke="white" stroke-width="4" />
+                <line x1="50" y1="75" x2="65" y2="95" stroke="white" stroke-width="4" />
+                <line x1="45" y1="50" x2="55" y2="50" stroke="black" stroke-width="4" />
+            </svg>
+            `;
+        }
+    </script>
+</body>
+</html>
