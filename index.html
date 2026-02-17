@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Suburb Tracker Pro</title>
+    <title>Suburb Tracker GT</title>
     <style>
         /* --- STYLING (CSS) --- */
         body {
@@ -12,110 +12,123 @@
             font-family: Arial, Helvetica, sans-serif;
             text-align: center;
             margin: 0;
-            padding: 10px;
+            /* Added padding at the top for spacing */
+            padding-top: 40px; 
+            padding-bottom: 20px;
             display: flex;
             flex-direction: column;
             align-items: center;
-            height: 95vh;
+            height: 90vh; /* Keeps everything on one screen */
             overflow: hidden;
+        }
+
+        /* TOP BUTTON CONTAINER */
+        .controls {
+            width: 100%;
+            margin-bottom: 30px; /* Space between button and content */
         }
 
         /* VOICE BUTTON */
         #voice-btn {
             background-color: #333;
             color: #fff;
-            border: 1px solid #555;
-            padding: 10px 20px;
-            font-size: 1rem;
-            border-radius: 5px;
-            margin-bottom: 10px;
-            width: 80%;
+            border: 2px solid #555;
+            padding: 15px 30px;
+            font-size: 1.2rem;
+            border-radius: 50px; /* Rounded pill shape */
             cursor: pointer;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.5);
+            transition: all 0.3s ease;
         }
         #voice-btn.active {
-            background-color: #007bff;
+            background-color: #007bff; /* Blue */
             border-color: #0056b3;
+            box-shadow: 0 0 15px #007bff; /* Glowing effect */
         }
 
         /* COUNCIL BADGE */
         #council-badge {
-            font-size: 0.9rem;
+            font-size: 1rem;
             font-weight: bold;
             text-transform: uppercase;
-            letter-spacing: 2px;
-            color: #ccc;
-            border: 1px solid #555;
-            padding: 5px 15px;
-            border-radius: 20px;
-            margin-bottom: 10px;
-            background-color: #1a1a1a;
+            letter-spacing: 3px;
+            color: #888;
+            border: 1px solid #444;
+            padding: 8px 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            background-color: #111;
             display: inline-block;
-            min-width: 150px;
+            min-width: 180px;
         }
 
         /* SPEED DISPLAY */
         #speed-box {
             font-size: 2.5rem;
             font-weight: bold;
-            color: #00ff00;
-            margin-bottom: 10px;
+            color: #00ff00; /* Always Green for safety */
+            margin-bottom: 15px;
+            text-shadow: 0 0 5px #00ff00;
         }
 
-        /* SUBURB DISPLAY */
+        /* MAIN SUBURB DISPLAY */
         #suburb-display {
             flex-grow: 1;
             display: flex;
             flex-direction: column;
             justify-content: center;
             align-items: center;
+            width: 100%;
         }
 
-        /* TEXT STYLING */
         .suburb-name {
             font-size: 3.5rem;
             font-weight: 900;
-            color: #ffffff;
             line-height: 1.1;
-            /* Ensures "Title Case" (First letter big, rest small) */
             text-transform: capitalize; 
+            margin-top: 10px;
+            transition: color 0.5s ease; /* Smooth color change */
         }
 
-        /* ICON STYLING */
         .icon-display {
-            font-size: 5rem;
+            font-size: 6rem;
             margin-bottom: 10px;
-            /* Flex center for SVG handling */
             display: flex;
             justify-content: center;
             align-items: center;
-            height: 100px; 
+            height: 120px;
+            transition: filter 0.5s ease; /* Smooth color shift */
         }
 
         /* HISTORY LIST */
         #history-box {
-            font-size: 1.2rem;
-            color: #888;
-            border-top: 2px solid #333;
-            padding-top: 10px;
+            font-size: 1.1rem;
+            color: #666;
+            border-top: 1px solid #333;
+            padding-top: 15px;
             width: 90%;
-            min-height: 100px;
+            min-height: 120px;
         }
         .history-item {
-            margin: 5px 0;
+            margin: 8px 0;
             display: flex;
             justify-content: space-between;
+            border-bottom: 1px solid #222;
+            padding-bottom: 2px;
         }
         .history-time {
-            font-size: 0.8rem;
-            color: #555;
+            font-size: 0.9rem;
+            color: #444;
         }
     </style>
 </head>
 <body>
 
-    <button id="voice-btn" class="active" onclick="toggleVoice()">🔊 Voice: ON</button>
+    <div class="controls">
+        <button id="voice-btn" class="active" onclick="toggleVoice()">🔊 Voice: ON</button>
+    </div>
     
-    <div id="council-badge">Waiting for GPS...</div>
+    <div id="council-badge">Waiting...</div>
 
     <div id="speed-box">0 km/h</div>
     
@@ -128,9 +141,7 @@
         </div>
 
     <script>
-        // --- DATA LOOKUPS ---
-
-        // 1. ICONS
+        // --- CONFIGURATION ---
         const suburbIcons = {
             "Lang Lang": "🚜",      
             "Tooradin": "🌿",       
@@ -145,129 +156,136 @@
             "Mordialloc": "⛵",
             "Mentone": "🏫",
             "Parkdale": "☕",
-            "Moorabbin": getStKildaStickman(), // Special SVG Function
+            "Moorabbin": getStKildaStickman(),
             "Default": "📍"
         };
 
-        // 2. COUNCIL MAP (Add more here as you need)
         const councilMap = {
-            "Chelsea": "Kingston",
-            "Aspendale": "Kingston",
-            "Edithvale": "Kingston",
-            "Bonbeach": "Kingston",
-            "Carrum": "Kingston",
-            "Mordialloc": "Kingston",
-            "Mentone": "Kingston",
-            "Parkdale": "Kingston",
-            "Moorabbin": "Kingston",
-            "Highett": "Kingston",
-            "Clarinda": "Kingston",
-            "Seaford": "Frankston",
-            "Frankston": "Frankston",
-            "Langwarrin": "Frankston",
-            "Skye": "Frankston",
-            "Lang Lang": "Cardinia",
-            "Koo Wee Rup": "Cardinia",
-            "Tooradin": "Casey",
-            "Cranbourne": "Casey",
-            "Pearcedale": "Casey",
-            "Cannons Creek": "Casey"
+            "Chelsea": "Kingston", "Aspendale": "Kingston", "Edithvale": "Kingston",
+            "Bonbeach": "Kingston", "Carrum": "Kingston", "Mordialloc": "Kingston",
+            "Mentone": "Kingston", "Parkdale": "Kingston", "Moorabbin": "Kingston",
+            "Highett": "Kingston", "Seaford": "Frankston", "Frankston": "Frankston",
+            "Langwarrin": "Frankston", "Skye": "Frankston", "Lang Lang": "Cardinia",
+            "Koo Wee Rup": "Cardinia", "Tooradin": "Casey", "Cranbourne": "Casey",
+            "Pearcedale": "Casey", "Cannons Creek": "Casey"
         };
 
         // --- VARIABLES ---
         let lastSuburb = "";
         let suburbHistory = [];
         let voiceEnabled = true;
+        let wakeLock = null; // Variable to hold the screen lock
         const synth = window.speechSynthesis;
 
-        // --- GPS TRACKING ---
+        // --- GPS ---
         if ("geolocation" in navigator) {
             navigator.geolocation.watchPosition(updateLocation, console.error, {
                 enableHighAccuracy: true,
                 maximumAge: 1000
             });
-        } else {
-            document.querySelector('.suburb-name').innerText = "NO GPS";
         }
 
-        // --- FUNCTIONS ---
+        // --- WAKE LOCK (PREVENT SCREEN SLEEP) ---
+        async function requestWakeLock() {
+            try {
+                if ('wakeLock' in navigator) {
+                    wakeLock = await navigator.wakeLock.request('screen');
+                    console.log('Screen Wake Lock active');
+                }
+            } catch (err) {
+                console.log(`${err.name}, ${err.message}`);
+            }
+        }
 
+        // --- BUTTONS ---
         function toggleVoice() {
             voiceEnabled = !voiceEnabled;
             const btn = document.getElementById('voice-btn');
+            
+            // Re-trigger Wake Lock on click (browser requirement)
+            requestWakeLock();
+
             if (voiceEnabled) {
                 btn.innerText = "🔊 Voice: ON";
                 btn.classList.add("active");
+                // Test Speak
+                const utterance = new SpeechSynthesisUtterance("Voice Active");
+                synth.speak(utterance);
             } else {
                 btn.innerText = "🔇 Voice: OFF";
                 btn.classList.remove("active");
             }
         }
 
+        // --- MAIN LOGIC ---
         async function updateLocation(position) {
-            // Speed
             const speedKmh = position.coords.speed ? Math.round(position.coords.speed * 3.6) : 0;
             document.getElementById('speed-box').innerText = speedKmh + " km/h";
 
-            // Suburb
             const lat = position.coords.latitude;
             const lon = position.coords.longitude;
             const url = `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}&zoom=14`;
 
             try {
-                const response = await fetch(url, { headers: { 'User-Agent': 'GrandpaPeteTracker/2.0' } });
+                const response = await fetch(url, { headers: { 'User-Agent': 'GrandpaPeteTracker/3.0' } });
                 const data = await response.json();
                 
                 let rawSuburb = data.address.suburb || data.address.town || data.address.hamlet || "Unknown";
-                
-                // Convert to Title Case (e.g. "LANG LANG" -> "Lang Lang")
                 let cleanSuburb = toTitleCase(rawSuburb);
 
                 if (cleanSuburb !== lastSuburb && cleanSuburb !== "Unknown") {
                     updateDisplay(cleanSuburb);
                     lastSuburb = cleanSuburb;
                 }
-
-            } catch (error) {
-                console.log("GPS fetch error: " + error);
-            }
+            } catch (error) { console.log("GPS Error"); }
         }
 
         function updateDisplay(suburbName) {
-            // 1. Get Icon
+            // 1. Get Data
             const icon = suburbIcons[suburbName] || suburbIcons["Default"];
-            
-            // 2. Get Council
             const council = councilMap[suburbName] || "Unknown Council";
 
-            // 3. Update HTML
-            document.getElementById('council-badge').innerText = "COUNCIL: " + council;
+            // 2. Generate Random Neon Color
+            const colors = ["#FFD700", "#00FFFF", "#FF69B4", "#ADFF2F", "#FFA500", "#FFFFFF"];
+            const randomColor = colors[Math.floor(Math.random() * colors.length)];
             
-            document.getElementById('suburb-display').innerHTML = `
-                <div class="icon-display">${icon}</div>
-                <div class="suburb-name">${suburbName}</div>
-            `;
+            // 3. Update DOM
+            document.getElementById('council-badge').innerText = council;
+            
+            const subNameEl = document.querySelector('.suburb-name');
+            const iconEl = document.querySelector('.icon-display');
+
+            subNameEl.innerText = suburbName;
+            subNameEl.style.color = randomColor; // Change Text Color
+            
+            iconEl.innerHTML = icon;
+            // Slightly rotate the color hue of the icon for variety
+            // (Note: This is subtle on emojis, but changes the 'pin' color effectively)
+            const randomHue = Math.floor(Math.random() * 360);
+            iconEl.style.filter = `hue-rotate(${randomHue}deg)`;
 
             // 4. Voice
             if (voiceEnabled) {
+                // Cancel any previous speech so it doesn't backlog
+                synth.cancel(); 
                 const utterance = new SpeechSynthesisUtterance("Entering " + suburbName);
                 synth.speak(utterance);
             }
 
             // 5. History
-            addToHistory(suburbName);
+            addToHistory(suburbName, randomColor);
         }
 
-        function addToHistory(suburb) {
+        function addToHistory(suburb, color) {
             const now = new Date();
             const timeString = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
             
-            suburbHistory.unshift({ name: suburb, time: timeString });
+            suburbHistory.unshift({ name: suburb, time: timeString, color: color });
             if (suburbHistory.length > 4) suburbHistory.pop();
             
             const historyHTML = suburbHistory.map(item => 
-                `<div class="history-item">
-                    <span>${item.name}</span>
+                `<div class="history-item" style="border-left: 5px solid ${item.color}; padding-left: 10px;">
+                    <span style="color: ${item.color}">${item.name}</span>
                     <span class="history-time">${item.time}</span>
                 </div>`
             ).join('');
@@ -275,27 +293,16 @@
             document.getElementById('history-box').innerHTML = historyHTML;
         }
 
-        // Helper: Force Title Case
         function toTitleCase(str) {
-            return str.toLowerCase().split(' ').map(function(word) {
-                return word.charAt(0).toUpperCase() + word.slice(1);
-            }).join(' ');
+            return str.toLowerCase().split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
         }
 
-        // Helper: The Custom St Kilda Stickman SVG
         function getStKildaStickman() {
+            // Updated to be simpler and bolder
             return `
-            <svg width="80" height="80" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
-                <ellipse cx="50" cy="15" rx="20" ry="5" stroke="yellow" stroke-width="3" fill="none" />
-                <circle cx="50" cy="35" r="10" fill="white" stroke="red" stroke-width="2"/>
-                <line x1="50" y1="45" x2="50" y2="75" stroke="white" stroke-width="4" />
-                <line x1="30" y1="55" x2="70" y2="55" stroke="white" stroke-width="4" />
-                <line x1="50" y1="75" x2="35" y2="95" stroke="white" stroke-width="4" />
-                <line x1="50" y1="75" x2="65" y2="95" stroke="white" stroke-width="4" />
-                <line x1="45" y1="50" x2="55" y2="50" stroke="black" stroke-width="4" />
-            </svg>
-            `;
-        }
-    </script>
-</body>
-</html>
+            <svg width="100" height="100" viewBox="0 0 100 100">
+                <circle cx="50" cy="15" r="10" stroke="#FFD700" stroke-width="2" fill="none" />
+                <circle cx="50" cy="35" r="12" fill="white" stroke="red" stroke-width="3"/>
+                <line x1="50" y1="47" x2="50" y2="80" stroke="white" stroke-width="5" />
+                <line x1="30" y1="55" x2="70" y2="55" stroke="white" stroke-width="5" />
+                <line x1="50" y1="80" x2="
