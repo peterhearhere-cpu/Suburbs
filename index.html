@@ -4,19 +4,43 @@
     <title>Grandpa Pete's Tracker</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <style>
-        body { font-family: sans-serif; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; margin: 0; background: #121212; color: #00FF00; }
-        #display { font-size: 4rem; font-weight: bold; text-align: center; padding: 20px; }
-        .btn { padding: 15px 30px; font-size: 1.2rem; background: #333; color: white; border: 2px solid #00FF00; border-radius: 10px; margin: 10px; }
+        body { 
+            font-family: sans-serif; 
+            display: flex; 
+            flex-direction: column; 
+            align-items: center; 
+            justify-content: center; 
+            height: 100vh; 
+            margin: 0; 
+            background: #000000; 
+            color: #00FF00; 
+            transition: color 0.5s ease;
+            overflow: hidden;
+        }
+        #suburb-display { font-size: 4.5rem; font-weight: bold; text-align: center; padding: 10px; line-height: 1.1; }
+        #speed-display { font-size: 2.2rem; margin-top: 5px; color: #ffffff; opacity: 0.9; }
+        #history-display { font-size: 1.2rem; margin-top: 20px; color: #888; text-align: center; }
+        .history-item { margin: 3px 0; }
+        .btn { padding: 15px 30px; font-size: 1.2rem; background: #222; color: white; border: 2px solid currentColor; border-radius: 10px; margin: 10px; cursor: pointer; }
+        #controls { position: absolute; bottom: 20px; display: flex; flex-direction: column; align-items: center; }
     </style>
 </head>
 <body>
-    <div id="display">READY?</div>
-    <button class="btn" id="startBtn" onclick="start()">START TRACKING</button>
-    <button class="btn" id="voiceBtn" onclick="toggleVoice()" style="display:none;">VOICE OFF</button>
+    <div id="suburb-display">READY?</div>
+    <div id="speed-display" style="display:none;">0 km/h</div>
+    <div id="history-display"></div>
+
+    <div id="controls">
+        <button class="btn" id="startBtn" onclick="start()">START TRACKING</button>
+        <button class="btn" id="voiceBtn" onclick="toggleVoice()" style="display:none;">VOICE OFF</button>
+    </div>
 
     <script>
         let lastSuburb = "";
         let voiceEnabled = false;
+        let history = [];
+        const colors = ['#00FF00', '#00FFFF', '#FF00FF', '#FFFF00', '#FF8000', '#FF3333', '#33FF33'];
+        let colorIndex = 0;
 
         function toggleVoice() {
             voiceEnabled = !voiceEnabled;
@@ -30,24 +54,55 @@
             }
         }
 
+        function changeColor() {
+            colorIndex = (colorIndex + 1) % colors.length;
+            document.body.style.color = colors[colorIndex];
+        }
+
+        function updateHistory(suburb) {
+            if (lastSuburb && lastSuburb !== "FINDING..." && lastSuburb !== "Unknown") {
+                history.unshift(lastSuburb); // Add old suburb to start of list
+                if (history.length > 3) history.pop(); // Keep only last 3
+                
+                let html = "";
+                history.forEach(item => {
+                    html += `<div class="history-item">prev: ${item}</div>`;
+                });
+                document.getElementById('history-display').innerHTML = html;
+            }
+        }
+
         async function start() {
             document.getElementById('startBtn').style.display = 'none';
             document.getElementById('voiceBtn').style.display = 'block';
-            document.getElementById('display').innerText = "FINDING...";
+            document.getElementById('speed-display').style.display = 'block';
+            document.getElementById('suburb-display').innerText = "FINDING...";
             
+            if ('wakeLock' in navigator) {
+                try { await navigator.wakeLock.request('screen'); } catch (err) {}
+            }
+
             navigator.geolocation.watchPosition(async (pos) => {
+                const speedMS = pos.coords.speed || 0;
+                const speedKMH = Math.round(speedMS * 3.6);
+                document.getElementById('speed-display').innerText = speedKMH + " km/h";
+
                 try {
                     const res = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${pos.coords.latitude}&lon=${pos.coords.longitude}&zoom=18`);
                     const data = await res.json();
                     const suburb = data.address.suburb || data.address.town || data.address.village || "Unknown";
                     
                     if (suburb !== lastSuburb) {
-                        document.getElementById('display').innerText = suburb;
+                        updateHistory(suburb);
+                        document.getElementById('suburb-display').innerText = suburb;
+                        changeColor();
                         speak(suburb);
                         lastSuburb = suburb;
                     }
-                } catch (e) { document.getElementById('display').innerText = "CONNECTING..."; }
-            }, (err) => { document.getElementById('display').innerText = "ENABLE GPS"; }, { enableHighAccuracy: true });
+                } catch (e) { console.log("Fetch error"); }
+            }, (err) => { 
+                document.getElementById('suburb-display').innerText = "GPS ERROR"; 
+            }, { enableHighAccuracy: true, maximumAge: 0, timeout: 10000 });
         }
     </script>
 </body>
