@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Grandpa Pete's Tracker</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        body { font-family: sans-serif; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; margin: 0; background: #121212; color: #00FF00; }
+        #display { font-size: 4rem; font-weight: bold; text-align: center; padding: 20px; }
+        .btn { padding: 15px 30px; font-size: 1.2rem; background: #333; color: white; border: 2px solid #00FF00; border-radius: 10px; margin: 10px; }
+    </style>
+</head>
+<body>
+    <div id="display">READY?</div>
+    <button class="btn" id="startBtn" onclick="start()">START TRACKING</button>
+    <button class="btn" id="voiceBtn" onclick="toggleVoice()" style="display:none;">VOICE OFF</button>
+
+    <script>
+        let lastSuburb = "";
+        let voiceEnabled = false;
+
+        function toggleVoice() {
+            voiceEnabled = !voiceEnabled;
+            document.getElementById('voiceBtn').innerText = voiceEnabled ? "VOICE ON" : "VOICE OFF";
+        }
+
+        function speak(text) {
+            if (voiceEnabled) {
+                const msg = new SpeechSynthesisUtterance("Now entering " + text);
+                window.speechSynthesis.speak(msg);
+            }
+        }
+
+        async function start() {
+            document.getElementById('startBtn').style.display = 'none';
+            document.getElementById('voiceBtn').style.display = 'block';
+            document.getElementById('display').innerText = "FINDING...";
+            
+            navigator.geolocation.watchPosition(async (pos) => {
+                try {
+                    const res = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${pos.coords.latitude}&lon=${pos.coords.longitude}&zoom=18`);
+                    const data = await res.json();
+                    const suburb = data.address.suburb || data.address.town || data.address.village || "Unknown";
+                    
+                    if (suburb !== lastSuburb) {
+                        document.getElementById('display').innerText = suburb;
+                        speak(suburb);
+                        lastSuburb = suburb;
+                    }
+                } catch (e) { document.getElementById('display').innerText = "CONNECTING..."; }
+            }, (err) => { document.getElementById('display').innerText = "ENABLE GPS"; }, { enableHighAccuracy: true });
+        }
+    </script>
+</body>
+</html>
