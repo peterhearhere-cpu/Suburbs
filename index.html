@@ -12,20 +12,19 @@
             font-family: Arial, Helvetica, sans-serif;
             text-align: center;
             margin: 0;
-            /* Added padding at the top for spacing */
-            padding-top: 40px; 
-            padding-bottom: 20px;
+            /* Extra spacing at the top */
+            padding-top: 50px; 
             display: flex;
             flex-direction: column;
             align-items: center;
-            height: 90vh; /* Keeps everything on one screen */
+            height: 90vh;
             overflow: hidden;
         }
 
-        /* TOP BUTTON CONTAINER */
+        /* CONTROLS CONTAINER */
         .controls {
             width: 100%;
-            margin-bottom: 30px; /* Space between button and content */
+            margin-bottom: 25px;
         }
 
         /* VOICE BUTTON */
@@ -33,45 +32,45 @@
             background-color: #333;
             color: #fff;
             border: 2px solid #555;
-            padding: 15px 30px;
+            padding: 15px 40px;
             font-size: 1.2rem;
-            border-radius: 50px; /* Rounded pill shape */
+            border-radius: 50px;
             cursor: pointer;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.5);
+            box-shadow: 0 4px 10px rgba(255,255,255,0.1);
             transition: all 0.3s ease;
         }
         #voice-btn.active {
             background-color: #007bff; /* Blue */
             border-color: #0056b3;
-            box-shadow: 0 0 15px #007bff; /* Glowing effect */
+            box-shadow: 0 0 20px rgba(0, 123, 255, 0.5);
         }
 
         /* COUNCIL BADGE */
         #council-badge {
-            font-size: 1rem;
+            font-size: 0.9rem;
             font-weight: bold;
             text-transform: uppercase;
-            letter-spacing: 3px;
-            color: #888;
+            letter-spacing: 2px;
+            color: #aaa;
             border: 1px solid #444;
-            padding: 8px 20px;
-            border-radius: 10px;
+            padding: 8px 15px;
+            border-radius: 8px;
             margin-bottom: 20px;
             background-color: #111;
             display: inline-block;
-            min-width: 180px;
+            min-width: 200px;
         }
 
         /* SPEED DISPLAY */
         #speed-box {
             font-size: 2.5rem;
             font-weight: bold;
-            color: #00ff00; /* Always Green for safety */
-            margin-bottom: 15px;
-            text-shadow: 0 0 5px #00ff00;
+            color: #00ff00; /* Green */
+            margin-bottom: 20px;
+            text-shadow: 0 0 10px rgba(0, 255, 0, 0.3);
         }
 
-        /* MAIN SUBURB DISPLAY */
+        /* MAIN DISPLAY AREA */
         #suburb-display {
             flex-grow: 1;
             display: flex;
@@ -85,19 +84,18 @@
             font-size: 3.5rem;
             font-weight: 900;
             line-height: 1.1;
-            text-transform: capitalize; 
-            margin-top: 10px;
-            transition: color 0.5s ease; /* Smooth color change */
+            margin-top: 15px;
+            transition: color 0.5s ease;
         }
 
         .icon-display {
             font-size: 6rem;
-            margin-bottom: 10px;
+            margin-bottom: 5px;
             display: flex;
             justify-content: center;
             align-items: center;
-            height: 120px;
-            transition: filter 0.5s ease; /* Smooth color shift */
+            height: 110px;
+            transition: filter 0.5s ease;
         }
 
         /* HISTORY LIST */
@@ -114,21 +112,22 @@
             display: flex;
             justify-content: space-between;
             border-bottom: 1px solid #222;
-            padding-bottom: 2px;
+            padding-bottom: 4px;
         }
         .history-time {
-            font-size: 0.9rem;
+            font-size: 0.8rem;
             color: #444;
+            align-self: flex-end;
         }
     </style>
 </head>
-<body>
+<body onclick="requestWakeLock()">
 
     <div class="controls">
-        <button id="voice-btn" class="active" onclick="toggleVoice()">🔊 Voice: ON</button>
+        <button id="voice-btn" class="active" onclick="toggleVoice(event)">🔊 Voice: ON</button>
     </div>
     
-    <div id="council-badge">Waiting...</div>
+    <div id="council-badge">WAITING FOR GPS...</div>
 
     <div id="speed-box">0 km/h</div>
     
@@ -137,15 +136,24 @@
         <div class="suburb-name">Locating...</div>
     </div>
 
-    <div id="history-box">
-        </div>
+    <div id="history-box"></div>
 
     <script>
-        // --- CONFIGURATION ---
+        // --- DATASETS ---
         const suburbIcons = {
+            // Baw Baw / Gippsland
+            "Drouin": "🌳",         // Trees/Ficifolia
+            "Warragul": "🐄",       // Dairy
+            "Longwarry": "🛤️",      // Railway
+            "Bunyip": "🔥",         // Bunyip (Mythical/Fire)
+            
+            // Cardinia / Casey
             "Lang Lang": "🚜",      
             "Tooradin": "🌿",       
             "Koo Wee Rup": "🥔",    
+            "Cranbourne": "🏇",     // Horses/Racing
+            
+            // Bayside / Kingston
             "Chelsea": "🏖️",
             "Aspendale": "🏊",
             "Edithvale": "🦆",
@@ -157,27 +165,30 @@
             "Mentone": "🏫",
             "Parkdale": "☕",
             "Moorabbin": getStKildaStickman(),
+            
             "Default": "📍"
         };
 
         const councilMap = {
+            "Drouin": "Baw Baw", "Warragul": "Baw Baw", "Longwarry": "Baw Baw",
+            "Bunyip": "Cardinia", "Lang Lang": "Cardinia", "Koo Wee Rup": "Cardinia",
+            "Tooradin": "Casey", "Cranbourne": "Casey", "Pearcedale": "Casey",
+            "Cannons Creek": "Casey", "Seaford": "Frankston", "Frankston": "Frankston",
+            "Langwarrin": "Frankston", "Skye": "Frankston",
             "Chelsea": "Kingston", "Aspendale": "Kingston", "Edithvale": "Kingston",
             "Bonbeach": "Kingston", "Carrum": "Kingston", "Mordialloc": "Kingston",
             "Mentone": "Kingston", "Parkdale": "Kingston", "Moorabbin": "Kingston",
-            "Highett": "Kingston", "Seaford": "Frankston", "Frankston": "Frankston",
-            "Langwarrin": "Frankston", "Skye": "Frankston", "Lang Lang": "Cardinia",
-            "Koo Wee Rup": "Cardinia", "Tooradin": "Casey", "Cranbourne": "Casey",
-            "Pearcedale": "Casey", "Cannons Creek": "Casey"
+            "Highett": "Kingston"
         };
 
         // --- VARIABLES ---
         let lastSuburb = "";
         let suburbHistory = [];
         let voiceEnabled = true;
-        let wakeLock = null; // Variable to hold the screen lock
+        let wakeLock = null;
         const synth = window.speechSynthesis;
 
-        // --- GPS ---
+        // --- GPS START ---
         if ("geolocation" in navigator) {
             navigator.geolocation.watchPosition(updateLocation, console.error, {
                 enableHighAccuracy: true,
@@ -185,52 +196,60 @@
             });
         }
 
-        // --- WAKE LOCK (PREVENT SCREEN SLEEP) ---
+        // --- WAKE LOCK (SCREEN ON) ---
         async function requestWakeLock() {
+            if (!('wakeLock' in navigator)) return;
             try {
-                if ('wakeLock' in navigator) {
+                if (wakeLock === null) {
                     wakeLock = await navigator.wakeLock.request('screen');
-                    console.log('Screen Wake Lock active');
+                    console.log('Screen Wake Lock Active');
                 }
             } catch (err) {
-                console.log(`${err.name}, ${err.message}`);
+                console.log(err.name, err.message);
             }
         }
+        
+        // Re-request lock if user switches apps and comes back
+        document.addEventListener("visibilitychange", async () => {
+            if (wakeLock !== null && document.visibilityState === "visible") {
+                wakeLock = await navigator.wakeLock.request('screen');
+            }
+        });
 
-        // --- BUTTONS ---
-        function toggleVoice() {
+        // --- VOICE TOGGLE ---
+        function toggleVoice(event) {
+            event.stopPropagation(); // Prevent double-triggering body click
+            requestWakeLock(); // Ensure screen stays on
+            
             voiceEnabled = !voiceEnabled;
             const btn = document.getElementById('voice-btn');
             
-            // Re-trigger Wake Lock on click (browser requirement)
-            requestWakeLock();
-
             if (voiceEnabled) {
                 btn.innerText = "🔊 Voice: ON";
                 btn.classList.add("active");
-                // Test Speak
-                const utterance = new SpeechSynthesisUtterance("Voice Active");
-                synth.speak(utterance);
+                synth.speak(new SpeechSynthesisUtterance("Voice Active"));
             } else {
                 btn.innerText = "🔇 Voice: OFF";
                 btn.classList.remove("active");
             }
         }
 
-        // --- MAIN LOGIC ---
+        // --- UPDATE LOGIC ---
         async function updateLocation(position) {
+            // Speed
             const speedKmh = position.coords.speed ? Math.round(position.coords.speed * 3.6) : 0;
             document.getElementById('speed-box').innerText = speedKmh + " km/h";
 
+            // Location
             const lat = position.coords.latitude;
             const lon = position.coords.longitude;
             const url = `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}&zoom=14`;
 
             try {
-                const response = await fetch(url, { headers: { 'User-Agent': 'GrandpaPeteTracker/3.0' } });
+                const response = await fetch(url, { headers: { 'User-Agent': 'GrandpaPeteGT/4.0' } });
                 const data = await response.json();
                 
-                let rawSuburb = data.address.suburb || data.address.town || data.address.hamlet || "Unknown";
+                let rawSuburb = data.address.suburb || data.address.town || data.address.village || "Unknown";
                 let cleanSuburb = toTitleCase(rawSuburb);
 
                 if (cleanSuburb !== lastSuburb && cleanSuburb !== "Unknown") {
@@ -241,38 +260,34 @@
         }
 
         function updateDisplay(suburbName) {
-            // 1. Get Data
+            // Lookup
             const icon = suburbIcons[suburbName] || suburbIcons["Default"];
-            const council = councilMap[suburbName] || "Unknown Council";
+            const council = councilMap[suburbName] || "UNKNOWN COUNCIL";
 
-            // 2. Generate Random Neon Color
+            // Colors
             const colors = ["#FFD700", "#00FFFF", "#FF69B4", "#ADFF2F", "#FFA500", "#FFFFFF"];
             const randomColor = colors[Math.floor(Math.random() * colors.length)];
             
-            // 3. Update DOM
-            document.getElementById('council-badge').innerText = council;
+            // DOM Update
+            document.getElementById('council-badge').innerText = "COUNCIL: " + council;
             
             const subNameEl = document.querySelector('.suburb-name');
             const iconEl = document.querySelector('.icon-display');
 
             subNameEl.innerText = suburbName;
-            subNameEl.style.color = randomColor; // Change Text Color
+            subNameEl.style.color = randomColor;
             
             iconEl.innerHTML = icon;
-            // Slightly rotate the color hue of the icon for variety
-            // (Note: This is subtle on emojis, but changes the 'pin' color effectively)
-            const randomHue = Math.floor(Math.random() * 360);
-            iconEl.style.filter = `hue-rotate(${randomHue}deg)`;
+            iconEl.style.filter = `hue-rotate(${Math.floor(Math.random() * 360)}deg)`;
 
-            // 4. Voice
+            // Audio
             if (voiceEnabled) {
-                // Cancel any previous speech so it doesn't backlog
-                synth.cancel(); 
-                const utterance = new SpeechSynthesisUtterance("Entering " + suburbName);
+                synth.cancel();
+                const utterance = new SpeechSynthesisUtterance("Now entering " + suburbName);
                 synth.speak(utterance);
             }
 
-            // 5. History
+            // History
             addToHistory(suburbName, randomColor);
         }
 
@@ -283,14 +298,14 @@
             suburbHistory.unshift({ name: suburb, time: timeString, color: color });
             if (suburbHistory.length > 4) suburbHistory.pop();
             
-            const historyHTML = suburbHistory.map(item => 
-                `<div class="history-item" style="border-left: 5px solid ${item.color}; padding-left: 10px;">
+            const html = suburbHistory.map(item => 
+                `<div class="history-item" style="border-left: 4px solid ${item.color}; padding-left: 10px;">
                     <span style="color: ${item.color}">${item.name}</span>
                     <span class="history-time">${item.time}</span>
                 </div>`
             ).join('');
             
-            document.getElementById('history-box').innerHTML = historyHTML;
+            document.getElementById('history-box').innerHTML = html;
         }
 
         function toTitleCase(str) {
@@ -298,11 +313,17 @@
         }
 
         function getStKildaStickman() {
-            // Updated to be simpler and bolder
             return `
             <svg width="100" height="100" viewBox="0 0 100 100">
                 <circle cx="50" cy="15" r="10" stroke="#FFD700" stroke-width="2" fill="none" />
                 <circle cx="50" cy="35" r="12" fill="white" stroke="red" stroke-width="3"/>
                 <line x1="50" y1="47" x2="50" y2="80" stroke="white" stroke-width="5" />
                 <line x1="30" y1="55" x2="70" y2="55" stroke="white" stroke-width="5" />
-                <line x1="50" y1="80" x2="
+                <line x1="50" y1="80" x2="35" y2="100" stroke="white" stroke-width="5" />
+                <line x1="50" y1="80" x2="65" y2="100" stroke="white" stroke-width="5" />
+                <line x1="45" y1="50" x2="55" y2="50" stroke="black" stroke-width="6" />
+            </svg>`;
+        }
+    </script>
+</body>
+</html>
