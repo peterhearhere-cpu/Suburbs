@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Suburb Tracker v7</title>
+    <title>Suburb Tracker v10</title>
     <style>
         /* --- STYLING (CSS) --- */
         body {
@@ -57,7 +57,7 @@
 
         /* COUNCIL BADGE */
         #council-badge {
-            font-size: 1.5rem;
+            font-size: 1.05rem; 
             font-weight: bold;
             text-transform: uppercase;
             color: #aaa;
@@ -69,35 +69,48 @@
             width: 85%;
         }
 
-        /* INFO GRID (Speed + Weather) */
+        /* INFO GRID (Speed + Weather + Wind + Travel) */
         .info-grid {
             display: flex;
             justify-content: space-around;
+            flex-wrap: wrap; 
             width: 95%;
-            margin-bottom: 15px;
+            margin-bottom: 10px;
             border-bottom: 1px solid #333;
-            padding-bottom: 15px;
+            padding-bottom: 10px;
+            gap: 5px;
         }
 
         .info-box {
             text-align: center;
+            flex: 1 1 30%; 
+            margin-bottom: 5px;
         }
 
         .info-label {
-            font-size: 0.8rem;
+            font-size: 0.75rem;
             color: #888;
             margin-bottom: 2px;
         }
 
         .info-value {
-            font-size: 1.8rem;
+            font-size: 1.5rem; 
             font-weight: bold;
+            line-height: 1.1;
+        }
+        
+        .sub-value {
+            font-size: 0.9rem;
+            color: #ccc;
+            font-weight: normal;
         }
 
         /* Specific Colors */
-        #speed-val { color: #00ff00; } /* Green */
-        #temp-val { color: #ffcc00; }  /* Yellow/Orange */
-        #uv-val { color: #ff00ff; }    /* Magenta for UV */
+        #speed-val { color: #00ff00; } 
+        #heading-val { color: #00bfff; } 
+        #temp-val { color: #ffcc00; }  
+        #uv-val { color: #ff00ff; }    
+        #wind-val { color: #ffffff; }  
 
 
         /* MAIN SUBURB DISPLAY */
@@ -108,6 +121,7 @@
             justify-content: center;
             align-items: center;
             width: 100%;
+            position: relative;
         }
 
         .suburb-name {
@@ -125,6 +139,14 @@
             align-items: center;
             height: 110px;
             transition: filter 0.5s ease;
+        }
+
+        /* TIMESTAMP */
+        #last-updated {
+            font-size: 0.75rem;
+            color: #555;
+            margin-top: 20px;
+            font-style: italic;
         }
 
         /* HISTORY OVERLAY */
@@ -149,6 +171,26 @@
             background: none; border: none; cursor: pointer;
         }
 
+        .history-header-container {
+            width: 80%;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid #555;
+            padding-bottom: 10px;
+            margin-bottom: 10px;
+        }
+
+        .clear-btn {
+            background-color: #dc3545;
+            color: white;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 5px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
         .history-item {
             font-size: 1.2rem;
             padding: 15px;
@@ -156,6 +198,13 @@
             width: 80%;
             display: flex;
             justify-content: space-between;
+            align-items: center;
+        }
+
+        .history-time {
+            font-size: 0.85rem;
+            color: #aaa;
+            text-align: right;
         }
     </style>
 </head>
@@ -176,6 +225,14 @@
             <div id="speed-val" class="info-value">0</div>
         </div>
         <div class="info-box">
+            <div class="info-label">TRAVEL DIR</div>
+            <div id="heading-val" class="info-value">--</div>
+        </div>
+        <div class="info-box">
+            <div class="info-label">WIND</div>
+            <div id="wind-val" class="info-value">--</div>
+        </div>
+        <div class="info-box">
             <div class="info-label">TEMP</div>
             <div id="temp-val" class="info-value">--°</div>
         </div>
@@ -188,12 +245,18 @@
     <div id="suburb-display">
         <div class="icon-display">🛰️</div>
         <div class="suburb-name">Locating...</div>
+        <div id="last-updated">Waiting for location data...</div>
     </div>
 
     <div id="history-overlay">
         <button id="close-history-btn" onclick="toggleHistory()">✖</button>
-        <h2 style="color:white; border-bottom: 1px solid #555; padding-bottom:10px;">JOURNEY LOG</h2>
-        <div id="history-content"></div>
+        
+        <div class="history-header-container">
+            <h2 style="color:white; margin: 0;">JOURNEY LOG</h2>
+            <button class="clear-btn" onclick="clearHistory()">Clear</button>
+        </div>
+
+        <div id="history-content" style="width: 100%; display: flex; flex-direction: column; align-items: center;"></div>
     </div>
 
     <script>
@@ -231,12 +294,30 @@
             "Sorrento": "Morn Pen", "Hastings": "Morn Pen", "Somerville": "Morn Pen"
         };
 
-        // --- VARIABLES ---
+        // --- VARIABLES & INITIALIZATION ---
         let lastSuburb = "";
         let suburbHistory = [];
         let wakeLock = null;
         let lastUpdateTime = 0;
         const MIN_UPDATE_DELAY = 30000; // 30 Seconds
+
+        // Load saved history from the browser's local storage
+        const savedHistory = localStorage.getItem('suburbJourneyLog');
+        if (savedHistory) {
+            try {
+                suburbHistory = JSON.parse(savedHistory);
+            } catch (e) {
+                console.log("Error loading saved history.");
+            }
+        }
+
+        // --- HELPER: DEGREE TO CARDINAL ---
+        function getCardinal(angle) {
+            if (angle === null || angle === undefined || isNaN(angle)) return "--";
+            const directions = ["N", "NE", "E", "SE", "S", "SW", "W", "NW"];
+            const index = Math.round(((angle %= 360) < 0 ? angle + 360 : angle) / 45) % 8;
+            return directions[index];
+        }
 
         // --- GPS ---
         if ("geolocation" in navigator) {
@@ -281,37 +362,66 @@
                 overlay.style.display = "flex";
             }
         }
+
         function renderHistory() {
             const container = document.getElementById('history-content');
+            if (suburbHistory.length === 0) {
+                container.innerHTML = "<p style='color:#888;'>No locations logged yet.</p>";
+                return;
+            }
             container.innerHTML = suburbHistory.map(item => 
                 `<div class="history-item" style="border-left: 5px solid ${item.color};">
                     <span style="color: ${item.color}; font-weight:bold;">${item.name}</span>
-                    <span style="color: #aaa;">${item.time}</span>
+                    <span class="history-time">${item.time}</span>
                 </div>`
             ).join('');
         }
 
+        function clearHistory() {
+            if(confirm("Are you sure you want to clear your journey log?")) {
+                suburbHistory = []; // Empty the array
+                localStorage.removeItem('suburbJourneyLog'); // Delete from browser storage
+                renderHistory(); // Refresh the display
+            }
+        }
+
         // --- WEATHER FETCH ---
         async function fetchWeather(lat, lon) {
-            // Using Open-Meteo Free API
-            const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,uv_index&timezone=auto`;
+            const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,uv_index,wind_speed_10m,wind_direction_10m&timezone=auto`;
             try {
                 const response = await fetch(url);
                 const data = await response.json();
                 
                 const temp = Math.round(data.current.temperature_2m);
                 const uv = data.current.uv_index;
+                const windSpd = Math.round(data.current.wind_speed_10m);
+                const windDir = data.current.wind_direction_10m;
+                const windCard = getCardinal(windDir);
                 
                 document.getElementById('temp-val').innerText = temp + "°";
                 document.getElementById('uv-val').innerText = uv;
+                document.getElementById('wind-val').innerHTML = 
+                    `${windSpd} km/h<br><span class="sub-value">${windCard} ${windDir}°</span>`;
                 
             } catch (err) { console.log("Weather Error: " + err); }
         }
 
         // --- UPDATE LOGIC ---
         async function updateLocation(position) {
+            // Update Speed
             const speedKmh = position.coords.speed ? Math.round(position.coords.speed * 3.6) : 0;
             document.getElementById('speed-val').innerText = speedKmh + " km/h";
+
+            // Update Travel Heading
+            const heading = position.coords.heading;
+            if (heading !== null && !isNaN(heading)) {
+                const headInt = Math.round(heading);
+                const headCard = getCardinal(headInt);
+                document.getElementById('heading-val').innerHTML = 
+                    `${headCard}<br><span class="sub-value">${headInt}°</span>`;
+            } else {
+                document.getElementById('heading-val').innerHTML = `--<br><span class="sub-value">--°</span>`;
+            }
 
             const now = Date.now();
             if (now - lastUpdateTime < MIN_UPDATE_DELAY) return;
@@ -319,11 +429,11 @@
             const lat = position.coords.latitude;
             const lon = position.coords.longitude;
             
-            // 1. Fetch Location Name
+            // Fetch Location Name
             const geoUrl = `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}&zoom=14`;
 
             try {
-                const response = await fetch(geoUrl, { headers: { 'User-Agent': 'GrandpaPetev7/7.0' } });
+                const response = await fetch(geoUrl, { headers: { 'User-Agent': 'GrandpaPetev10/10.0' } });
                 const data = await response.json();
                 
                 let rawSuburb = data.address.suburb || data.address.town || data.address.village || "Unknown";
@@ -331,10 +441,12 @@
 
                 if (cleanSuburb !== lastSuburb && cleanSuburb !== "Unknown") {
                     updateDisplay(cleanSuburb);
-                    
-                    // 2. Only fetch weather when we enter a new suburb (saves data)
                     fetchWeather(lat, lon);
                     
+                    const timeNow = new Date();
+                    const formattedTime = timeNow.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+                    document.getElementById('last-updated').innerText = `Last Updated: ${formattedTime}`;
+
                     lastSuburb = cleanSuburb;
                     lastUpdateTime = Date.now();
                 }
@@ -364,8 +476,22 @@
 
         function addToHistoryData(suburb, color) {
             const now = new Date();
-            const timeString = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-            suburbHistory.unshift({ name: suburb, time: timeString, color: color });
+            
+            // Format: "Thu 19 Feb"
+            const dateOpts = { weekday: 'short', day: 'numeric', month: 'short' };
+            const dateString = now.toLocaleDateString('en-AU', dateOpts);
+            
+            // Format: "02:30 pm"
+            const timeOpts = { hour: '2-digit', minute: '2-digit' };
+            const timeString = now.toLocaleTimeString('en-AU', timeOpts);
+            
+            // Combine them
+            const fullDateTime = `${dateString} <br> ${timeString}`;
+
+            suburbHistory.unshift({ name: suburb, time: fullDateTime, color: color });
+            
+            // Save the updated list to browser storage
+            localStorage.setItem('suburbJourneyLog', JSON.stringify(suburbHistory));
         }
 
         function toTitleCase(str) {
