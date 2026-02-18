@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Suburb Tracker Silent</title>
+    <title>Suburb Tracker v7</title>
     <style>
         /* --- STYLING (CSS) --- */
         body {
@@ -12,63 +12,95 @@
             font-family: Arial, Helvetica, sans-serif;
             text-align: center;
             margin: 0;
-            padding-top: 40px; 
+            padding-top: 15px; 
             display: flex;
             flex-direction: column;
             align-items: center;
-            height: 90vh;
+            height: 98vh; /* Maximize screen usage */
             overflow: hidden;
         }
 
-        /* CONTROLS CONTAINER */
+        /* TOP CONTROLS */
         .controls {
-            width: 100%;
-            margin-bottom: 20px;
+            width: 90%;
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 10px;
         }
 
-        /* JOURNEY LIST BUTTON */
-        #list-btn {
+        .btn {
             background-color: #333;
             color: #fff;
-            border: 2px solid #555;
-            padding: 15px 40px;
-            font-size: 1.2rem;
-            border-radius: 50px;
+            border: 1px solid #555;
+            padding: 10px;
+            font-size: 0.9rem;
+            border-radius: 10px;
             cursor: pointer;
-            box-shadow: 0 4px 10px rgba(255,255,255,0.1);
-            transition: all 0.3s ease;
+            width: 48%;
+            transition: all 0.2s;
         }
-        #list-btn:active {
-            background-color: #555;
-            transform: scale(0.98);
+        .btn.active {
+            background-color: #28a745; 
+            border-color: #1e7e34;
+            color: white;
+            box-shadow: 0 0 10px rgba(40, 167, 69, 0.4);
         }
 
-        /* COUNCIL BADGE - DOUBLED SIZE */
+        /* APP DESCRIPTION */
+        #app-desc {
+            font-size: 0.8rem;
+            color: #666;
+            font-style: italic;
+            margin-bottom: 15px;
+            letter-spacing: 0.5px;
+        }
+
+        /* COUNCIL BADGE */
         #council-badge {
-            font-size: 2.0rem; /* Increased from 0.9rem */
+            font-size: 1.5rem;
             font-weight: bold;
             text-transform: uppercase;
-            letter-spacing: 2px;
             color: #aaa;
-            border: 2px solid #444;
-            padding: 10px 20px;
-            border-radius: 12px;
-            margin-bottom: 20px;
+            border: 1px solid #444;
+            padding: 8px;
+            border-radius: 8px;
+            margin-bottom: 10px;
             background-color: #111;
-            display: inline-block;
-            min-width: 250px;
+            width: 85%;
         }
 
-        /* SPEED DISPLAY */
-        #speed-box {
-            font-size: 2.5rem;
+        /* INFO GRID (Speed + Weather) */
+        .info-grid {
+            display: flex;
+            justify-content: space-around;
+            width: 95%;
+            margin-bottom: 15px;
+            border-bottom: 1px solid #333;
+            padding-bottom: 15px;
+        }
+
+        .info-box {
+            text-align: center;
+        }
+
+        .info-label {
+            font-size: 0.8rem;
+            color: #888;
+            margin-bottom: 2px;
+        }
+
+        .info-value {
+            font-size: 1.8rem;
             font-weight: bold;
-            color: #00ff00;
-            margin-bottom: 20px;
-            text-shadow: 0 0 10px rgba(0, 255, 0, 0.3);
         }
 
-        /* MAIN DISPLAY AREA */
+        /* Specific Colors */
+        #speed-val { color: #00ff00; } /* Green */
+        #temp-val { color: #ffcc00; }  /* Yellow/Orange */
+        #uv-val { color: #ff00ff; }    /* Magenta for UV */
+
+
+        /* MAIN SUBURB DISPLAY */
         #suburb-display {
             flex-grow: 1;
             display: flex;
@@ -81,50 +113,44 @@
         .suburb-name {
             font-size: 3.5rem;
             font-weight: 900;
-            line-height: 1.1;
-            margin-top: 15px;
+            line-height: 1.0;
+            margin-top: 10px;
             transition: color 0.5s ease;
         }
 
         .icon-display {
-            font-size: 7rem;
-            margin-bottom: 5px;
+            font-size: 6rem;
             display: flex;
             justify-content: center;
             align-items: center;
-            height: 120px;
+            height: 110px;
             transition: filter 0.5s ease;
         }
 
-        /* HIDDEN HISTORY LIST (OVERLAY) */
+        /* HISTORY OVERLAY */
         #history-overlay {
-            display: none; /* Hidden by default */
+            display: none;
             position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
             background-color: rgba(0,0,0,0.95);
             z-index: 100;
             overflow-y: auto;
-            padding-top: 60px;
             flex-direction: column;
             align-items: center;
+            padding-top: 50px;
         }
 
         #close-history-btn {
             position: absolute;
-            top: 20px;
-            right: 20px;
+            top: 15px; right: 15px;
             font-size: 2rem;
             color: #fff;
-            background: none;
-            border: none;
-            cursor: pointer;
+            background: none; border: none; cursor: pointer;
         }
 
         .history-item {
-            font-size: 1.5rem;
+            font-size: 1.2rem;
             padding: 15px;
             border-bottom: 1px solid #333;
             width: 80%;
@@ -133,15 +159,31 @@
         }
     </style>
 </head>
-<body onclick="requestWakeLock()">
+<body>
 
     <div class="controls">
-        <button id="list-btn" onclick="toggleHistory(event)">Show History 📜</button>
+        <button id="wakelock-btn" class="btn" onclick="toggleWakeLock()">Screen: Auto 📱</button>
+        <button id="list-btn" class="btn" onclick="toggleHistory()">History 📜</button>
     </div>
-    
-    <div id="council-badge">WAITING...</div>
 
-    <div id="speed-box">0 km/h</div>
+    <div id="app-desc">Showing you the suburbs you pass on your journey</div>
+    
+    <div id="council-badge">WAITING FOR GPS...</div>
+
+    <div class="info-grid">
+        <div class="info-box">
+            <div class="info-label">SPEED</div>
+            <div id="speed-val" class="info-value">0</div>
+        </div>
+        <div class="info-box">
+            <div class="info-label">TEMP</div>
+            <div id="temp-val" class="info-value">--°</div>
+        </div>
+        <div class="info-box">
+            <div class="info-label">UV</div>
+            <div id="uv-val" class="info-value">--</div>
+        </div>
+    </div>
     
     <div id="suburb-display">
         <div class="icon-display">🛰️</div>
@@ -149,7 +191,7 @@
     </div>
 
     <div id="history-overlay">
-        <button id="close-history-btn" onclick="toggleHistory(event)">✖</button>
+        <button id="close-history-btn" onclick="toggleHistory()">✖</button>
         <h2 style="color:white; border-bottom: 1px solid #555; padding-bottom:10px;">JOURNEY LOG</h2>
         <div id="history-content"></div>
     </div>
@@ -157,11 +199,10 @@
     <script>
         // --- DATASETS ---
         const suburbIcons = {
-            // Baw Baw / Gippsland
             "Drouin": "🌳", "Warragul": "🐄", "Longwarry": "🛤️", "Bunyip": "🔥",
-            // Cardinia / Casey
-            "Lang Lang": "🚜", "Tooradin": "🌿", "Koo Wee Rup": "🥔", "Cranbourne": "🏇",
-            // Bayside / Kingston
+            "Moe": "⚡", "Morwell": "🏭", "Traralgon": "🏙️", "Yarragon": "🍰",
+            "Lang Lang": "🚜", "Tooradin": "🌿", "Koo Wee Rup": "🥔", 
+            "Cranbourne": "🏇", "Pakenham": "🐎", "Berwick": "🌳", "Narre Warren": "🛍️",
             "Chelsea": "🏖️", "Aspendale": "🏊", "Edithvale": "🦆", "Bonbeach": "🏄",
             "Carrum": "🌉", "Seaford": "🌲", "Frankston": "🏙️", "Mordialloc": "⛵",
             "Mentone": "🏫", "Parkdale": "☕", "Moorabbin": getStKildaStickman(),
@@ -169,27 +210,35 @@
         };
 
         const councilMap = {
-            "Drouin": "Baw Baw", "Warragul": "Baw Baw", "Longwarry": "Baw Baw",
-            "Bunyip": "Cardinia", "Lang Lang": "Cardinia", "Koo Wee Rup": "Cardinia",
-            "Tooradin": "Casey", "Cranbourne": "Casey", "Pearcedale": "Casey",
-            "Cannons Creek": "Casey", "Seaford": "Frankston", "Frankston": "Frankston",
-            "Langwarrin": "Frankston", "Skye": "Frankston",
             "Chelsea": "Kingston", "Aspendale": "Kingston", "Edithvale": "Kingston",
             "Bonbeach": "Kingston", "Carrum": "Kingston", "Mordialloc": "Kingston",
             "Mentone": "Kingston", "Parkdale": "Kingston", "Moorabbin": "Kingston",
-            "Highett": "Kingston"
+            "Highett": "Kingston", "Clarinda": "Kingston", "Clayton South": "Kingston",
+            "Seaford": "Frankston", "Frankston": "Frankston", "Langwarrin": "Frankston", 
+            "Skye": "Frankston", "Karingal": "Frankston", "Frankston South": "Frankston",
+            "Tooradin": "Casey", "Cranbourne": "Casey", "Pearcedale": "Casey",
+            "Cannons Creek": "Casey", "Berwick": "Casey", "Narre Warren": "Casey",
+            "Clyde": "Casey", "Hampton Park": "Casey", "Hallam": "Casey",
+            "Lang Lang": "Cardinia", "Koo Wee Rup": "Cardinia", "Bunyip": "Cardinia",
+            "Pakenham": "Cardinia", "Officer": "Cardinia", "Beaconsfield": "Cardinia",
+            "Emerald": "Cardinia", "Gembrook": "Cardinia", "Cockatoo": "Cardinia",
+            "Drouin": "Baw Baw", "Warragul": "Baw Baw", "Longwarry": "Baw Baw",
+            "Yarragon": "Baw Baw", "Trafalgar": "Baw Baw", "Neerim South": "Baw Baw",
+            "Moe": "Latrobe", "Morwell": "Latrobe", "Traralgon": "Latrobe",
+            "Wonthaggi": "Bass Coast", "Inverloch": "Bass Coast", "Cowes": "Bass Coast",
+            "San Remo": "Bass Coast", "Grantville": "Bass Coast", "Corinella": "Bass Coast",
+            "Mornington": "Morn Pen", "Rosebud": "Morn Pen", "Rye": "Morn Pen",
+            "Sorrento": "Morn Pen", "Hastings": "Morn Pen", "Somerville": "Morn Pen"
         };
 
         // --- VARIABLES ---
         let lastSuburb = "";
         let suburbHistory = [];
         let wakeLock = null;
-        
-        // Anti-Flicker Variables
         let lastUpdateTime = 0;
-        const MIN_UPDATE_DELAY = 30000; // 30 Seconds in milliseconds
+        const MIN_UPDATE_DELAY = 30000; // 30 Seconds
 
-        // --- GPS START ---
+        // --- GPS ---
         if ("geolocation" in navigator) {
             navigator.geolocation.watchPosition(updateLocation, console.error, {
                 enableHighAccuracy: true,
@@ -198,25 +247,32 @@
         }
 
         // --- WAKE LOCK ---
-        async function requestWakeLock() {
-            if (!('wakeLock' in navigator)) return;
-            try {
-                if (wakeLock === null) {
-                    wakeLock = await navigator.wakeLock.request('screen');
-                    console.log('Screen Wake Lock Active');
-                }
-            } catch (err) { console.log(err); }
+        async function toggleWakeLock() {
+            const btn = document.getElementById('wakelock-btn');
+            if (!wakeLock) {
+                try {
+                    if ('wakeLock' in navigator) {
+                        wakeLock = await navigator.wakeLock.request('screen');
+                        btn.innerHTML = "Screen: ON 💡";
+                        btn.classList.add("active");
+                    } else { alert("Not supported"); }
+                } catch (err) { console.log(err); }
+            } else {
+                wakeLock.release().then(() => {
+                    wakeLock = null;
+                    btn.innerHTML = "Screen: Auto 📱";
+                    btn.classList.remove("active");
+                });
+            }
         }
-        
         document.addEventListener("visibilitychange", async () => {
             if (wakeLock !== null && document.visibilityState === "visible") {
                 wakeLock = await navigator.wakeLock.request('screen');
             }
         });
 
-        // --- HISTORY TOGGLE ---
-        function toggleHistory(event) {
-            event.stopPropagation();
+        // --- HISTORY ---
+        function toggleHistory() {
             const overlay = document.getElementById('history-overlay');
             if (overlay.style.display === "flex") {
                 overlay.style.display = "none";
@@ -225,36 +281,49 @@
                 overlay.style.display = "flex";
             }
         }
-
         function renderHistory() {
             const container = document.getElementById('history-content');
             container.innerHTML = suburbHistory.map(item => 
                 `<div class="history-item" style="border-left: 5px solid ${item.color};">
-                    <span style="color: ${item.color}">${item.name}</span>
-                    <span style="color: #888; font-size: 1rem;">${item.time}</span>
+                    <span style="color: ${item.color}; font-weight:bold;">${item.name}</span>
+                    <span style="color: #aaa;">${item.time}</span>
                 </div>`
             ).join('');
         }
 
+        // --- WEATHER FETCH ---
+        async function fetchWeather(lat, lon) {
+            // Using Open-Meteo Free API
+            const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,uv_index&timezone=auto`;
+            try {
+                const response = await fetch(url);
+                const data = await response.json();
+                
+                const temp = Math.round(data.current.temperature_2m);
+                const uv = data.current.uv_index;
+                
+                document.getElementById('temp-val').innerText = temp + "°";
+                document.getElementById('uv-val').innerText = uv;
+                
+            } catch (err) { console.log("Weather Error: " + err); }
+        }
+
         // --- UPDATE LOGIC ---
         async function updateLocation(position) {
-            // Speed
             const speedKmh = position.coords.speed ? Math.round(position.coords.speed * 3.6) : 0;
-            document.getElementById('speed-box').innerText = speedKmh + " km/h";
+            document.getElementById('speed-val').innerText = speedKmh + " km/h";
 
-            // Check if we are in the "Lock-out" period
             const now = Date.now();
-            if (now - lastUpdateTime < MIN_UPDATE_DELAY) {
-                return; // Too soon! Ignore this GPS update to prevent flickering
-            }
+            if (now - lastUpdateTime < MIN_UPDATE_DELAY) return;
 
-            // Location Lookup
             const lat = position.coords.latitude;
             const lon = position.coords.longitude;
-            const url = `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}&zoom=14`;
+            
+            // 1. Fetch Location Name
+            const geoUrl = `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}&zoom=14`;
 
             try {
-                const response = await fetch(url, { headers: { 'User-Agent': 'GrandpaPeteSilent/5.0' } });
+                const response = await fetch(geoUrl, { headers: { 'User-Agent': 'GrandpaPetev7/7.0' } });
                 const data = await response.json();
                 
                 let rawSuburb = data.address.suburb || data.address.town || data.address.village || "Unknown";
@@ -262,22 +331,23 @@
 
                 if (cleanSuburb !== lastSuburb && cleanSuburb !== "Unknown") {
                     updateDisplay(cleanSuburb);
+                    
+                    // 2. Only fetch weather when we enter a new suburb (saves data)
+                    fetchWeather(lat, lon);
+                    
                     lastSuburb = cleanSuburb;
-                    lastUpdateTime = Date.now(); // Start the 30-second timer
+                    lastUpdateTime = Date.now();
                 }
             } catch (error) { console.log("GPS Error"); }
         }
 
         function updateDisplay(suburbName) {
-            // Lookup
             const icon = suburbIcons[suburbName] || suburbIcons["Default"];
-            const council = councilMap[suburbName] || "UNKNOWN"; // Shortened fallback
+            const council = councilMap[suburbName] || "Unknown Council"; 
 
-            // Colors
             const colors = ["#FFD700", "#00FFFF", "#FF69B4", "#ADFF2F", "#FFA500", "#FFFFFF"];
             const randomColor = colors[Math.floor(Math.random() * colors.length)];
             
-            // DOM Update
             document.getElementById('council-badge').innerText = council;
             
             const subNameEl = document.querySelector('.suburb-name');
@@ -289,14 +359,12 @@
             iconEl.innerHTML = icon;
             iconEl.style.filter = `hue-rotate(${Math.floor(Math.random() * 360)}deg)`;
 
-            // Add to History Data (But don't show it yet)
             addToHistoryData(suburbName, randomColor);
         }
 
         function addToHistoryData(suburb, color) {
             const now = new Date();
             const timeString = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-            // Add to top of list
             suburbHistory.unshift({ name: suburb, time: timeString, color: color });
         }
 
