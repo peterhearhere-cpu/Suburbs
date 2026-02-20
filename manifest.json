@@ -1,41 +1,15 @@
-<!DOCTYPE html>
-
-<html>
-<head>
-<title>Lesley's Calendar</title>
-<style>
-body { font-family: Arial, sans-serif; margin: 10px; background: #f4f4f4; }
-.header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; background: white; padding: 10px; border: 1px solid #ccc; }
-button { padding: 10px; cursor: pointer; font-weight: bold; background: #eee; }
-table { width: 100%; border-collapse: collapse; background: white; table-layout: fixed; border: 2px solid #333; }
-th { background: #ddd; padding: 10px; border: 1px solid #333; height: 30px; }
-td { border: 1px solid #ccc; height: 100px; vertical-align: top; padding: 5px; }
-.day-num { font-weight: bold; color: #333; }
-textarea { width: 95%; height: 70px; border: none; resize: none; font-family: Arial; outline: none; background: transparent; }
-.today { background-color: #ffffcc; border: 2px solid orange !important; }
-</style>
-</head>
-<body>
-
-<div class="header">
-<button onclick="changeMonth(-1)">PREV</button>
-<h2 id="monthDisplay" onclick="render()">Loading... (Click to Refresh)</h2>
-<button onclick="changeMonth(1)">NEXT</button>
-</div>
-
-<table id="calendar">
-<thead>
-<tr><th>Mon</th><th>Tue</th><th>Wed</th><th>Thu</th><th>Fri</th><th>Sat</th><th>Sun</th></tr>
-</thead>
-<tbody id="calendarBody">
-<tr><td colspan="7" style="text-align:center; padding:50px;">Waiting for calendar to draw...</td></tr>
-</tbody>
-</table>
-
-<script>
-var viewDate = new Date();
-
-</script>
-
-</body>
-</html>
+{
+  "name": "Grandpa Pete's Suburb Tracker",
+  "short_name": "Tracker",
+  "start_url": "index.html",
+  "display": "standalone",
+  "background_color": "#000000",
+  "theme_color": "#000000",
+  "icons": [
+    {
+      "src": "https://cdn-icons-png.flaticon.com/512/854/854878.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}
