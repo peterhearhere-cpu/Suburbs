@@ -3,209 +3,51 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Suburb Tracker v10</title>
+    <link rel="manifest" href="manifest.json">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="theme-color" content="#000000">
+    <title>Suburb Tracker v12</title>
     <style>
-        /* --- STYLING (CSS) --- */
-        body {
-            background-color: #000000;
-            color: #ffffff;
-            font-family: Arial, Helvetica, sans-serif;
-            text-align: center;
-            margin: 0;
-            padding-top: 15px; 
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            height: 98vh; /* Maximize screen usage */
-            overflow: hidden;
-        }
-
-        /* TOP CONTROLS */
-        .controls {
-            width: 90%;
-            display: flex;
-            justify-content: space-between;
-            margin-bottom: 10px;
-        }
-
-        .btn {
-            background-color: #333;
-            color: #fff;
-            border: 1px solid #555;
-            padding: 10px;
-            font-size: 0.9rem;
-            border-radius: 10px;
-            cursor: pointer;
-            width: 48%;
-            transition: all 0.2s;
-        }
-        .btn.active {
-            background-color: #28a745; 
-            border-color: #1e7e34;
-            color: white;
-            box-shadow: 0 0 10px rgba(40, 167, 69, 0.4);
-        }
-
-        /* APP DESCRIPTION */
-        #app-desc {
-            font-size: 0.8rem;
-            color: #666;
-            font-style: italic;
-            margin-bottom: 15px;
-            letter-spacing: 0.5px;
-        }
-
-        /* COUNCIL BADGE */
-        #council-badge {
-            font-size: 1.05rem; 
-            font-weight: bold;
-            text-transform: uppercase;
-            color: #aaa;
-            border: 1px solid #444;
-            padding: 8px;
-            border-radius: 8px;
-            margin-bottom: 10px;
-            background-color: #111;
-            width: 85%;
-        }
-
-        /* INFO GRID (Speed + Weather + Wind + Travel) */
-        .info-grid {
-            display: flex;
-            justify-content: space-around;
-            flex-wrap: wrap; 
-            width: 95%;
-            margin-bottom: 10px;
-            border-bottom: 1px solid #333;
-            padding-bottom: 10px;
-            gap: 5px;
-        }
-
-        .info-box {
-            text-align: center;
-            flex: 1 1 30%; 
-            margin-bottom: 5px;
-        }
-
-        .info-label {
-            font-size: 0.75rem;
-            color: #888;
-            margin-bottom: 2px;
-        }
-
-        .info-value {
-            font-size: 1.5rem; 
-            font-weight: bold;
-            line-height: 1.1;
-        }
+        body { background-color: #000000; color: #ffffff; font-family: Arial, sans-serif; text-align: center; margin: 0; padding-top: 10px; display: flex; flex-direction: column; align-items: center; height: 98vh; overflow: hidden; }
+        .controls { width: 90%; display: flex; justify-content: space-between; margin-bottom: 10px; }
+        .btn { background-color: #333; color: #fff; border: 1px solid #555; padding: 10px; font-size: 0.9rem; border-radius: 10px; cursor: pointer; width: 48%; }
+        .btn.active { background-color: #28a745; border-color: #1e7e34; }
         
-        .sub-value {
-            font-size: 0.9rem;
-            color: #ccc;
-            font-weight: normal;
-        }
-
-        /* Specific Colors */
-        #speed-val { color: #00ff00; } 
-        #heading-val { color: #00bfff; } 
-        #temp-val { color: #ffcc00; }  
-        #uv-val { color: #ff00ff; }    
-        #wind-val { color: #ffffff; }  
-
-
-        /* MAIN SUBURB DISPLAY */
-        #suburb-display {
-            flex-grow: 1;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            width: 100%;
+        /* COMPASS STYLING */
+        #compass-container {
+            width: 80px; height: 80px;
+            border: 2px solid #444;
+            border-radius: 50%;
             position: relative;
-        }
-
-        .suburb-name {
-            font-size: 3.5rem;
-            font-weight: 900;
-            line-height: 1.0;
-            margin-top: 10px;
-            transition: color 0.5s ease;
-        }
-
-        .icon-display {
-            font-size: 6rem;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 110px;
-            transition: filter 0.5s ease;
-        }
-
-        /* TIMESTAMP */
-        #last-updated {
-            font-size: 0.75rem;
-            color: #555;
-            margin-top: 20px;
-            font-style: italic;
-        }
-
-        /* HISTORY OVERLAY */
-        #history-overlay {
-            display: none;
-            position: fixed;
-            top: 0; left: 0;
-            width: 100%; height: 100%;
-            background-color: rgba(0,0,0,0.95);
-            z-index: 100;
-            overflow-y: auto;
-            flex-direction: column;
-            align-items: center;
-            padding-top: 50px;
-        }
-
-        #close-history-btn {
-            position: absolute;
-            top: 15px; right: 15px;
-            font-size: 2rem;
-            color: #fff;
-            background: none; border: none; cursor: pointer;
-        }
-
-        .history-header-container {
-            width: 80%;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            border-bottom: 1px solid #555;
-            padding-bottom: 10px;
             margin-bottom: 10px;
+            background: radial-gradient(circle, #111 0%, #000 100%);
         }
+        #compass-needle {
+            width: 4px; height: 60px;
+            position: absolute;
+            top: 10px; left: 38px;
+            transition: transform 0.2s ease-out;
+            transform-origin: center center;
+        }
+        .north { width: 100%; height: 50%; background-color: red; border-radius: 2px 2px 0 0; }
+        .south { width: 100%; height: 50%; background-color: blue; border-radius: 0 0 2px 2px; }
 
-        .clear-btn {
-            background-color: #dc3545;
-            color: white;
-            border: none;
-            padding: 6px 12px;
-            border-radius: 5px;
-            font-weight: bold;
-            cursor: pointer;
-        }
+        .info-grid { display: flex; justify-content: space-around; flex-wrap: wrap; width: 95%; margin-bottom: 5px; border-bottom: 1px solid #333; padding-bottom: 10px; gap: 5px; }
+        .info-box { text-align: center; flex: 1 1 30%; }
+        .info-label { font-size: 0.7rem; color: #888; }
+        .info-value { font-size: 1.3rem; font-weight: bold; line-height: 1.1; }
+        .sub-value { font-size: 0.8rem; color: #ccc; }
+        
+        #speed-val { color: #00ff00; } #heading-val { color: #00bfff; } #temp-val { color: #ffcc00; }
+        
+        #suburb-display { flex-grow: 1; display: flex; flex-direction: column; justify-content: center; align-items: center; width: 100%; }
+        .suburb-name { font-size: 3.5rem; font-weight: 900; line-height: 1.0; margin-top: 5px; }
+        .icon-display { font-size: 5.5rem; height: 100px; }
+        #last-updated { font-size: 0.7rem; color: #444; margin-top: 15px; }
 
-        .history-item {
-            font-size: 1.2rem;
-            padding: 15px;
-            border-bottom: 1px solid #333;
-            width: 80%;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        .history-time {
-            font-size: 0.85rem;
-            color: #aaa;
-            text-align: right;
-        }
+        #history-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.95); z-index: 100; overflow-y: auto; flex-direction: column; align-items: center; padding-top: 50px; }
+        .history-item { font-size: 1.1rem; padding: 12px; border-bottom: 1px solid #333; width: 85%; display: flex; justify-content: space-between; align-items: center; }
     </style>
 </head>
 <body>
@@ -215,301 +57,105 @@
         <button id="list-btn" class="btn" onclick="toggleHistory()">History 📜</button>
     </div>
 
-    <div id="app-desc">Showing you the suburbs you pass on your journey</div>
-    
-    <div id="council-badge">WAITING FOR GPS...</div>
+    <div id="compass-container">
+        <div id="compass-needle">
+            <div class="north"></div>
+            <div class="south"></div>
+        </div>
+        <div style="position:absolute; top:-15px; left:33px; font-size:10px; color:red; font-weight:bold;">N</div>
+    </div>
 
     <div class="info-grid">
-        <div class="info-box">
-            <div class="info-label">SPEED</div>
-            <div id="speed-val" class="info-value">0</div>
-        </div>
-        <div class="info-box">
-            <div class="info-label">TRAVEL DIR</div>
-            <div id="heading-val" class="info-value">--</div>
-        </div>
-        <div class="info-box">
-            <div class="info-label">WIND</div>
-            <div id="wind-val" class="info-value">--</div>
-        </div>
-        <div class="info-box">
-            <div class="info-label">TEMP</div>
-            <div id="temp-val" class="info-value">--°</div>
-        </div>
-        <div class="info-box">
-            <div class="info-label">UV</div>
-            <div id="uv-val" class="info-value">--</div>
-        </div>
+        <div class="info-box"><div class="info-label">SPEED</div><div id="speed-val" class="info-value">0</div></div>
+        <div class="info-box"><div class="info-label">TRAVEL</div><div id="heading-val" class="info-value">--</div></div>
+        <div class="info-box"><div class="info-label">WIND</div><div id="wind-val" class="info-value">--</div></div>
+        <div class="info-box"><div class="info-label">TEMP</div><div id="temp-val" class="info-value">--°</div></div>
+        <div class="info-box"><div class="info-label">UV</div><div id="uv-val" class="info-value">--</div></div>
     </div>
     
     <div id="suburb-display">
         <div class="icon-display">🛰️</div>
         <div class="suburb-name">Locating...</div>
-        <div id="last-updated">Waiting for location data...</div>
+        <div id="last-updated">Waiting...</div>
     </div>
 
     <div id="history-overlay">
-        <button id="close-history-btn" onclick="toggleHistory()">✖</button>
-        
-        <div class="history-header-container">
-            <h2 style="color:white; margin: 0;">JOURNEY LOG</h2>
-            <button class="clear-btn" onclick="clearHistory()">Clear</button>
-        </div>
-
-        <div id="history-content" style="width: 100%; display: flex; flex-direction: column; align-items: center;"></div>
+        <button style="position:absolute; top:15px; right:15px; font-size:2rem; color:white; background:none; border:none;" onclick="toggleHistory()">✖</button>
+        <h2 style="color:white;">JOURNEY LOG</h2>
+        <button style="background:#dc3545; color:white; border:none; padding:8px; border-radius:5px;" onclick="clearHistory()">Clear All</button>
+        <div id="history-content" style="width:100%; margin-top:20px;"></div>
     </div>
 
     <script>
-        // --- DATASETS ---
-        const suburbIcons = {
-            "Drouin": "🌳", "Warragul": "🐄", "Longwarry": "🛤️", "Bunyip": "🔥",
-            "Moe": "⚡", "Morwell": "🏭", "Traralgon": "🏙️", "Yarragon": "🍰",
-            "Lang Lang": "🚜", "Tooradin": "🌿", "Koo Wee Rup": "🥔", 
-            "Cranbourne": "🏇", "Pakenham": "🐎", "Berwick": "🌳", "Narre Warren": "🛍️",
-            "Chelsea": "🏖️", "Aspendale": "🏊", "Edithvale": "🦆", "Bonbeach": "🏄",
-            "Carrum": "🌉", "Seaford": "🌲", "Frankston": "🏙️", "Mordialloc": "⛵",
-            "Mentone": "🏫", "Parkdale": "☕", "Moorabbin": getStKildaStickman(),
-            "Default": "📍"
-        };
+        let lastSuburb = ""; let suburbHistory = JSON.parse(localStorage.getItem('suburbJourneyLog') || "[]");
+        let wakeLock = null; let lastUpdateTime = 0;
 
-        const councilMap = {
-            "Chelsea": "Kingston", "Aspendale": "Kingston", "Edithvale": "Kingston",
-            "Bonbeach": "Kingston", "Carrum": "Kingston", "Mordialloc": "Kingston",
-            "Mentone": "Kingston", "Parkdale": "Kingston", "Moorabbin": "Kingston",
-            "Highett": "Kingston", "Clarinda": "Kingston", "Clayton South": "Kingston",
-            "Seaford": "Frankston", "Frankston": "Frankston", "Langwarrin": "Frankston", 
-            "Skye": "Frankston", "Karingal": "Frankston", "Frankston South": "Frankston",
-            "Tooradin": "Casey", "Cranbourne": "Casey", "Pearcedale": "Casey",
-            "Cannons Creek": "Casey", "Berwick": "Casey", "Narre Warren": "Casey",
-            "Clyde": "Casey", "Hampton Park": "Casey", "Hallam": "Casey",
-            "Lang Lang": "Cardinia", "Koo Wee Rup": "Cardinia", "Bunyip": "Cardinia",
-            "Pakenham": "Cardinia", "Officer": "Cardinia", "Beaconsfield": "Cardinia",
-            "Emerald": "Cardinia", "Gembrook": "Cardinia", "Cockatoo": "Cardinia",
-            "Drouin": "Baw Baw", "Warragul": "Baw Baw", "Longwarry": "Baw Baw",
-            "Yarragon": "Baw Baw", "Trafalgar": "Baw Baw", "Neerim South": "Baw Baw",
-            "Moe": "Latrobe", "Morwell": "Latrobe", "Traralgon": "Latrobe",
-            "Wonthaggi": "Bass Coast", "Inverloch": "Bass Coast", "Cowes": "Bass Coast",
-            "San Remo": "Bass Coast", "Grantville": "Bass Coast", "Corinella": "Bass Coast",
-            "Mornington": "Morn Pen", "Rosebud": "Morn Pen", "Rye": "Morn Pen",
-            "Sorrento": "Morn Pen", "Hastings": "Morn Pen", "Somerville": "Morn Pen"
-        };
+        function getCardinal(angle) { if (angle === null || isNaN(angle)) return "--"; const directions = ["N", "NE", "E", "SE", "S", "SW", "W", "NW"]; return directions[Math.round(((angle %= 360) < 0 ? angle + 360 : angle) / 45) % 8]; }
 
-        // --- VARIABLES & INITIALIZATION ---
-        let lastSuburb = "";
-        let suburbHistory = [];
-        let wakeLock = null;
-        let lastUpdateTime = 0;
-        const MIN_UPDATE_DELAY = 30000; // 30 Seconds
+        if ("geolocation" in navigator) { navigator.geolocation.watchPosition(updateLocation, console.error, { enableHighAccuracy: true }); }
 
-        // Load saved history from the browser's local storage
-        const savedHistory = localStorage.getItem('suburbJourneyLog');
-        if (savedHistory) {
-            try {
-                suburbHistory = JSON.parse(savedHistory);
-            } catch (e) {
-                console.log("Error loading saved history.");
-            }
-        }
-
-        // --- HELPER: DEGREE TO CARDINAL ---
-        function getCardinal(angle) {
-            if (angle === null || angle === undefined || isNaN(angle)) return "--";
-            const directions = ["N", "NE", "E", "SE", "S", "SW", "W", "NW"];
-            const index = Math.round(((angle %= 360) < 0 ? angle + 360 : angle) / 45) % 8;
-            return directions[index];
-        }
-
-        // --- GPS ---
-        if ("geolocation" in navigator) {
-            navigator.geolocation.watchPosition(updateLocation, console.error, {
-                enableHighAccuracy: true,
-                maximumAge: 1000
-            });
-        }
-
-        // --- WAKE LOCK ---
-        async function toggleWakeLock() {
-            const btn = document.getElementById('wakelock-btn');
-            if (!wakeLock) {
-                try {
-                    if ('wakeLock' in navigator) {
-                        wakeLock = await navigator.wakeLock.request('screen');
-                        btn.innerHTML = "Screen: ON 💡";
-                        btn.classList.add("active");
-                    } else { alert("Not supported"); }
-                } catch (err) { console.log(err); }
-            } else {
-                wakeLock.release().then(() => {
-                    wakeLock = null;
-                    btn.innerHTML = "Screen: Auto 📱";
-                    btn.classList.remove("active");
-                });
-            }
-        }
-        document.addEventListener("visibilitychange", async () => {
-            if (wakeLock !== null && document.visibilityState === "visible") {
-                wakeLock = await navigator.wakeLock.request('screen');
-            }
-        });
-
-        // --- HISTORY ---
-        function toggleHistory() {
-            const overlay = document.getElementById('history-overlay');
-            if (overlay.style.display === "flex") {
-                overlay.style.display = "none";
-            } else {
-                renderHistory();
-                overlay.style.display = "flex";
-            }
-        }
-
-        function renderHistory() {
-            const container = document.getElementById('history-content');
-            if (suburbHistory.length === 0) {
-                container.innerHTML = "<p style='color:#888;'>No locations logged yet.</p>";
-                return;
-            }
-            container.innerHTML = suburbHistory.map(item => 
-                `<div class="history-item" style="border-left: 5px solid ${item.color};">
-                    <span style="color: ${item.color}; font-weight:bold;">${item.name}</span>
-                    <span class="history-time">${item.time}</span>
-                </div>`
-            ).join('');
-        }
-
-        function clearHistory() {
-            if(confirm("Are you sure you want to clear your journey log?")) {
-                suburbHistory = []; // Empty the array
-                localStorage.removeItem('suburbJourneyLog'); // Delete from browser storage
-                renderHistory(); // Refresh the display
-            }
-        }
-
-        // --- WEATHER FETCH ---
-        async function fetchWeather(lat, lon) {
-            const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,uv_index,wind_speed_10m,wind_direction_10m&timezone=auto`;
-            try {
-                const response = await fetch(url);
-                const data = await response.json();
-                
-                const temp = Math.round(data.current.temperature_2m);
-                const uv = data.current.uv_index;
-                const windSpd = Math.round(data.current.wind_speed_10m);
-                const windDir = data.current.wind_direction_10m;
-                const windCard = getCardinal(windDir);
-                
-                document.getElementById('temp-val').innerText = temp + "°";
-                document.getElementById('uv-val').innerText = uv;
-                document.getElementById('wind-val').innerHTML = 
-                    `${windSpd} km/h<br><span class="sub-value">${windCard} ${windDir}°</span>`;
-                
-            } catch (err) { console.log("Weather Error: " + err); }
-        }
-
-        // --- UPDATE LOGIC ---
         async function updateLocation(position) {
-            // Update Speed
-            const speedKmh = position.coords.speed ? Math.round(position.coords.speed * 3.6) : 0;
-            document.getElementById('speed-val').innerText = speedKmh + " km/h";
-
-            // Update Travel Heading
+            const speed = position.coords.speed ? Math.round(position.coords.speed * 3.6) : 0;
             const heading = position.coords.heading;
+            
+            document.getElementById('speed-val').innerText = speed + " km/h";
+
+            // Update Compass and Travel Direction
             if (heading !== null && !isNaN(heading)) {
-                const headInt = Math.round(heading);
-                const headCard = getCardinal(headInt);
-                document.getElementById('heading-val').innerHTML = 
-                    `${headCard}<br><span class="sub-value">${headInt}°</span>`;
-            } else {
-                document.getElementById('heading-val').innerHTML = `--<br><span class="sub-value">--°</span>`;
+                document.getElementById('heading-val').innerHTML = `${getCardinal(heading)}<br><span class="sub-value">${Math.round(heading)}°</span>`;
+                // Rotating the needle opposite to heading keeps it pointing North
+                document.getElementById('compass-needle').style.transform = `rotate(${-heading}deg)`;
             }
 
             const now = Date.now();
-            if (now - lastUpdateTime < MIN_UPDATE_DELAY) return;
-
-            const lat = position.coords.latitude;
-            const lon = position.coords.longitude;
-            
-            // Fetch Location Name
-            const geoUrl = `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}&zoom=14`;
+            if (now - lastUpdateTime < 30000) return;
 
             try {
-                const response = await fetch(geoUrl, { headers: { 'User-Agent': 'GrandpaPetev10/10.0' } });
-                const data = await response.json();
-                
-                let rawSuburb = data.address.suburb || data.address.town || data.address.village || "Unknown";
-                let cleanSuburb = toTitleCase(rawSuburb);
-
-                if (cleanSuburb !== lastSuburb && cleanSuburb !== "Unknown") {
-                    updateDisplay(cleanSuburb);
-                    fetchWeather(lat, lon);
-                    
-                    const timeNow = new Date();
-                    const formattedTime = timeNow.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-                    document.getElementById('last-updated').innerText = `Last Updated: ${formattedTime}`;
-
-                    lastSuburb = cleanSuburb;
-                    lastUpdateTime = Date.now();
+                const res = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${position.coords.latitude}&lon=${position.coords.longitude}&zoom=14`);
+                const data = await res.json();
+                let sub = toTitleCase(data.address.suburb || data.address.town || data.address.village || "Unknown");
+                if (sub !== lastSuburb && sub !== "Unknown") {
+                    lastSuburb = sub;
+                    updateDisplay(sub, position.coords.latitude, position.coords.longitude);
                 }
-            } catch (error) { console.log("GPS Error"); }
+            } catch (e) {}
         }
 
-        function updateDisplay(suburbName) {
-            const icon = suburbIcons[suburbName] || suburbIcons["Default"];
-            const council = councilMap[suburbName] || "Unknown Council"; 
-
+        async function updateDisplay(name, lat, lon) {
             const colors = ["#FFD700", "#00FFFF", "#FF69B4", "#ADFF2F", "#FFA500", "#FFFFFF"];
-            const randomColor = colors[Math.floor(Math.random() * colors.length)];
+            const color = colors[Math.floor(Math.random() * colors.length)];
+            const iconSet = { "Drouin": "🌳", "Warragul": "🐄", "Chelsea": "🏖️", "Moorabbin": "⚽", "Frankston": "🏙️" };
             
-            document.getElementById('council-badge').innerText = council;
+            document.querySelector('.suburb-name').innerText = name;
+            document.querySelector('.suburb-name').style.color = color;
+            document.querySelector('.icon-display').innerHTML = iconSet[name] || "📍";
             
-            const subNameEl = document.querySelector('.suburb-name');
-            const iconEl = document.querySelector('.icon-display');
-
-            subNameEl.innerText = suburbName;
-            subNameEl.style.color = randomColor;
+            const time = new Date();
+            document.getElementById('last-updated').innerText = `Updated: ${time.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}`;
             
-            iconEl.innerHTML = icon;
-            iconEl.style.filter = `hue-rotate(${Math.floor(Math.random() * 360)}deg)`;
-
-            addToHistoryData(suburbName, randomColor);
-        }
-
-        function addToHistoryData(suburb, color) {
-            const now = new Date();
-            
-            // Format: "Thu 19 Feb"
-            const dateOpts = { weekday: 'short', day: 'numeric', month: 'short' };
-            const dateString = now.toLocaleDateString('en-AU', dateOpts);
-            
-            // Format: "02:30 pm"
-            const timeOpts = { hour: '2-digit', minute: '2-digit' };
-            const timeString = now.toLocaleTimeString('en-AU', timeOpts);
-            
-            // Combine them
-            const fullDateTime = `${dateString} <br> ${timeString}`;
-
-            suburbHistory.unshift({ name: suburb, time: fullDateTime, color: color });
-            
-            // Save the updated list to browser storage
+            // Log History
+            const logEntry = { name, color, time: `${time.toLocaleDateString('en-AU', {weekday:'short', day:'numeric'})} ${time.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}` };
+            suburbHistory.unshift(logEntry);
             localStorage.setItem('suburbJourneyLog', JSON.stringify(suburbHistory));
+
+            // Weather
+            const wRes = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,uv_index,wind_speed_10m,wind_direction_10m&timezone=auto`);
+            const wData = await wRes.json();
+            document.getElementById('temp-val').innerText = Math.round(wData.current.temperature_2m) + "°";
+            document.getElementById('uv-val').innerText = wData.current.uv_index;
+            document.getElementById('wind-val').innerHTML = `${Math.round(wData.current.wind_speed_10m)}k<br><span class="sub-value">${getCardinal(wData.current.wind_direction_10m)}</span>`;
         }
 
-        function toTitleCase(str) {
-            return str.toLowerCase().split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
+        function toggleHistory() { 
+            const o = document.getElementById('history-overlay');
+            o.style.display = (o.style.display === "flex") ? "none" : "flex";
+            if(o.style.display === "flex") {
+                document.getElementById('history-content').innerHTML = suburbHistory.map(h => `<div class="history-item" style="border-left:4px solid ${h.color}"><b style="color:${h.color}">${h.name}</b><span style="color:#888; font-size:0.8rem;">${h.time}</span></div>`).join('');
+            }
         }
-
-        function getStKildaStickman() {
-            return `
-            <svg width="120" height="120" viewBox="0 0 100 100">
-                <circle cx="50" cy="15" r="10" stroke="#FFD700" stroke-width="2" fill="none" />
-                <circle cx="50" cy="35" r="12" fill="white" stroke="red" stroke-width="3"/>
-                <line x1="50" y1="47" x2="50" y2="80" stroke="white" stroke-width="5" />
-                <line x1="30" y1="55" x2="70" y2="55" stroke="white" stroke-width="5" />
-                <line x1="50" y1="80" x2="35" y2="100" stroke="white" stroke-width="5" />
-                <line x1="50" y1="80" x2="65" y2="100" stroke="white" stroke-width="5" />
-                <line x1="45" y1="50" x2="55" y2="50" stroke="black" stroke-width="6" />
-            </svg>`;
-        }
+        function clearHistory() { if(confirm("Clear?")) { suburbHistory = []; localStorage.removeItem('suburbJourneyLog'); toggleHistory(); } }
+        function toTitleCase(s) { return s.toLowerCase().split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' '); }
+        async function toggleWakeLock() { if (!wakeLock) { wakeLock = await navigator.wakeLock.request('screen'); document.getElementById('wakelock-btn').classList.add('active'); } else { wakeLock.release(); wakeLock = null; document.getElementById('wakelock-btn').classList.remove('active'); } }
     </script>
 </body>
 </html>
