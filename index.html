@@ -8,11 +8,11 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="theme-color" content="#000000">
 
-    <title>Suburb Tracker v16</title>
+    <title>Suburb Tracker v17</title>
     <style>
-        body { background-color: #000; color: #fff; font-family: 'Segoe UI', Arial, sans-serif; text-align: center; margin: 0; padding-top: 10px; display: flex; flex-direction: column; align-items: center; height: 100vh; overflow: hidden; }
+        /* Added 35px padding-top for extra black space at the top */
+        body { background-color: #000; color: #fff; font-family: 'Segoe UI', Arial, sans-serif; text-align: center; margin: 0; padding-top: 35px; display: flex; flex-direction: column; align-items: center; height: 100vh; overflow: hidden; }
         
-        /* Spacing between buttons and compass */
         .controls { width: 92%; display: flex; justify-content: space-between; margin-bottom: 25px; }
         .btn { background-color: #1a1a1a; color: #eee; border: 1px solid #333; padding: 12px; font-size: 0.9rem; border-radius: 12px; width: 47%; font-weight: bold; }
         .btn.active { background-color: #2e7d32; border-color: #4caf50; color: white; }
@@ -23,21 +23,21 @@
             border: 2px solid #222;
             border-radius: 50%;
             position: relative;
-            margin-bottom: 25px; /* Spacing between compass and labels */
+            margin-bottom: 25px; 
             background: radial-gradient(circle, #0a0a0a 0%, #000 100%);
         }
         #needle-pivot { width: 100%; height: 100%; position: absolute; transition: transform 0.15s linear; }
         .needle-n { position: absolute; top: 12px; left: 48px; width: 4px; height: 38px; background: #ff0000; border-radius: 4px 4px 0 0; }
         .needle-s { position: absolute; top: 50px; left: 48px; width: 4px; height: 38px; background: #0077ff; border-radius: 0 0 4px 4px; }
 
-        /* INFO GRID */
-        .info-grid { display: grid; grid-template-columns: repeat(4, 1fr); width: 95%; margin-bottom: 10px; padding-bottom: 15px; border-bottom: 1px solid #111; gap: 8px; }
+        /* INFO GRID - Split into two rows */
+        .info-container { width: 95%; margin-bottom: 10px; padding-bottom: 15px; border-bottom: 1px solid #111; display: flex; flex-direction: column; align-items: center; gap: 15px; }
+        .info-row-3 { display: grid; grid-template-columns: repeat(3, 1fr); width: 100%; gap: 8px; }
+        .info-row-2 { display: grid; grid-template-columns: repeat(2, 1fr); width: 66%; gap: 8px; }
         .info-box { display: flex; flex-direction: column; align-items: center; }
         
-        /* Labels same size as previous variables (1.3rem) */
-        .info-label { font-size: 1.3rem; color: #666; text-transform: uppercase; font-weight: bold; margin-bottom: 5px; }
-        
-        /* Values 10% bigger than labels (1.45rem) */
+        /* Labels updated to white */
+        .info-label { font-size: 1.2rem; color: #ffffff; text-transform: uppercase; font-weight: bold; margin-bottom: 5px; }
         .info-value { font-size: 1.45rem; font-weight: 900; color: #00ff66; letter-spacing: -0.5px; }
         .sub-text { font-size: 0.9rem; color: #ffff00; font-weight: bold; display: block; }
 
@@ -65,11 +65,16 @@
         <span style="position:absolute; top:-18px; left:43px; color:red; font-size:11px; font-weight:bold;">NORTH</span>
     </div>
 
-    <div class="info-grid">
-        <div class="info-box"><span class="info-label">Speed</span><div id="speed-val" class="info-value">0 km / h</div></div>
-        <div class="info-box"><span class="info-label">Travel</span><div id="heading-val" class="info-value">--</div></div>
-        <div class="info-box"><span class="info-label">Wind</span><div id="wind-val" class="info-value">--</div></div>
-        <div class="info-box"><span class="info-label">Temp</span><div id="temp-val" class="info-value">--</div></div>
+    <div class="info-container">
+        <div class="info-row-3">
+            <div class="info-box"><span class="info-label">Speed</span><div id="speed-val" class="info-value">0 km / h</div></div>
+            <div class="info-box"><span class="info-label">Travel</span><div id="heading-val" class="info-value">--</div></div>
+            <div class="info-box"><span class="info-label">Wind</span><div id="wind-val" class="info-value">--</div></div>
+        </div>
+        <div class="info-row-2">
+            <div class="info-box"><span class="info-label">Temp</span><div id="temp-val" class="info-value">--</div></div>
+            <div class="info-box"><span class="info-label">UV</span><div id="uv-val" class="info-value">--</div></div>
+        </div>
     </div>
 
     <div id="suburb-display">
@@ -90,17 +95,14 @@
         <button style="position:absolute; top:20px; right:25px; background:none; border:none; color:#fff; font-size:2.5rem;" onclick="toggleAbout()">✕</button>
         <h2 style="color:#00ff66;">ABOUT TRACKER</h2>
         <div style="width: 80%; text-align: left; line-height: 1.6; color: #ccc;">
-            <p>Welcome, Grandpa Pete! This app is designed to be your co-pilot while driving.</p>
-            <p>• <b>Suburb Tracking:</b> Uses GPS to identify the suburb you are currently in.</p>
-            <p>• <b>Live Data:</b> Displays your current speed, heading, and local weather.</p>
-            <p>• <b>Compass:</b> The red needle always points North relative to your phone's position.</p>
-            <p>• <b>History:</b> Saves your route automatically so you can review your journey later.</p>
+            <p>Welcome, this app is designed to show you the names of the suburbs you pass through as you travel. The Always On button will keep the app on whilst your travelling and the Log button will give you a history of the suburbs you travel through with a time stamp.</p>
         </div>
     </div>
 
     <script>
         let lastSub = ""; let history = JSON.parse(localStorage.getItem('peteTripLog') || "[]");
         let wakeLock = null; let lastUpdate = 0;
+        let lastLat = null; let lastLon = null;
 
         function getCard(deg) { 
             if (deg === null || isNaN(deg)) return "--";
@@ -108,19 +110,52 @@
             return dirs[Math.round(((deg %= 360) < 0 ? deg + 360 : deg) / 45) % 8];
         }
 
-        window.addEventListener('deviceorientationabsolute', (e) => {
+        // Haversine formula to calculate distance in meters between two coordinates
+        function calcDist(lat1, lon1, lat2, lon2) {
+            const R = 6371e3; 
+            const p1 = lat1 * Math.PI/180, p2 = lat2 * Math.PI/180;
+            const dp = (lat2-lat1) * Math.PI/180, dl = (lon2-lon1) * Math.PI/180;
+            const a = Math.sin(dp/2) * Math.sin(dp/2) + Math.cos(p1) * Math.cos(p2) * Math.sin(dl/2) * Math.sin(dl/2);
+            return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+        }
+
+        // Handle Compass Orientation
+        function handleOrientation(e) {
             if (e.alpha !== null) document.getElementById('needle-pivot').style.transform = `rotate(${-e.alpha}deg)`;
-        }, true);
+        }
+
+        // Initialize compass immediately if permissions aren't required
+        if (typeof DeviceOrientationEvent !== 'undefined' && typeof DeviceOrientationEvent.requestPermission !== 'function') {
+            window.addEventListener('deviceorientationabsolute', handleOrientation, true);
+        }
 
         if ("geolocation" in navigator) {
             navigator.geolocation.watchPosition(pos => {
                 const s = pos.coords.speed ? Math.round(pos.coords.speed * 3.6) : 0;
                 document.getElementById('speed-val').innerText = s + " km / h";
-                if (pos.coords.heading !== null) {
+                
+                // Use GPS heading if moving > 5km/h (more accurate in cars)
+                if (s > 5 && pos.coords.heading !== null) {
+                    document.getElementById('heading-val').innerHTML = `${getCard(pos.coords.heading)}<span class="sub-text">${Math.round(pos.coords.heading)}°</span>`;
+                    document.getElementById('needle-pivot').style.transform = `rotate(${-pos.coords.heading}deg)`;
+                } else if (pos.coords.heading !== null) {
                     document.getElementById('heading-val').innerHTML = `${getCard(pos.coords.heading)}<span class="sub-text">${Math.round(pos.coords.heading)}°</span>`;
                 }
-                if (Date.now() - lastUpdate > 30000) updateLoc(pos.coords.latitude, pos.coords.longitude);
-            }, null, { enableHighAccuracy: true });
+
+                let dist = 0;
+                if (lastLat !== null && lastLon !== null) {
+                    dist = calcDist(lastLat, lastLon, pos.coords.latitude, pos.coords.longitude);
+                }
+
+                // Update if we've moved more than 400 meters OR if it's our very first location check
+                if (lastLat === null || dist > 400) {
+                    updateLoc(pos.coords.latitude, pos.coords.longitude);
+                    lastLat = pos.coords.latitude;
+                    lastLon = pos.coords.longitude;
+                }
+            }, (err) => {
+                document.getElementById('last-updated').innerText = "GPS Error: " + err.message;
+            }, { enableHighAccuracy: true, maximumAge: 0 });
         }
 
         async function updateLoc(lat, lon) {
@@ -132,10 +167,13 @@
 
                 if (sub !== lastSub && sub !== "Unknown") {
                     lastSub = sub; lastUpdate = Date.now();
-                    const wRes = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,wind_speed_10m,wind_direction_10m&timezone=auto`);
+                    
+                    // Added uv_index to the API call
+                    const wRes = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,wind_speed_10m,wind_direction_10m,uv_index&timezone=auto`);
                     const w = await wRes.json();
                     document.getElementById('temp-val').innerText = Math.round(w.current.temperature_2m) + "°";
                     document.getElementById('wind-val').innerHTML = `${Math.round(w.current.wind_speed_10m)}k<span class="sub-text">${getCard(w.current.wind_direction_10m)}</span>`;
+                    document.getElementById('uv-val').innerText = w.current.uv_index.toFixed(1);
                     
                     const color = ["#FFD700", "#00FFFF", "#FF69B4", "#ADFF2F", "#FFA500"][Math.floor(Math.random() * 5)];
                     document.querySelector('.suburb-name').innerText = sub;
@@ -164,6 +202,15 @@
         
         async function toggleWake() { 
             const b = document.getElementById('wake-btn');
+            
+            // Ask for compass permission if on a device that requires it (like iOS)
+            if (typeof DeviceOrientationEvent !== 'undefined' && typeof DeviceOrientationEvent.requestPermission === 'function') {
+                try {
+                    const permission = await DeviceOrientationEvent.requestPermission();
+                    if (permission === 'granted') window.addEventListener('deviceorientationabsolute', handleOrientation, true);
+                } catch (e) {}
+            }
+
             if (!wakeLock) { 
                 try {
                     wakeLock = await navigator.wakeLock.request('screen'); 
