@@ -8,7 +8,7 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="theme-color" content="#000000">
 
-    <title>Suburb Tracker v20</title>
+    <title>Suburb Tracker v21</title>
     <style>
         body { background-color: #000; color: #fff; font-family: 'Segoe UI', Arial, sans-serif; text-align: center; margin: 0; padding-top: 35px; display: flex; flex-direction: column; align-items: center; height: 100vh; overflow: hidden; }
         
@@ -60,8 +60,15 @@
         .history-suburb { font-size: 1.3rem; font-weight: bold; margin-bottom: 5px; }
         .history-time { font-size: 1.3rem; color: #ffffff; }
 
-        #about-content { width: 85%; height: 85%; display: flex; flex-direction: column; text-align: left; line-height: 1.6; color: #ccc; }
-        #todo-box { flex-grow: 1; width: 100%; margin-top: 10px; margin-bottom: 20px; background: #111; color: #ccc; border: 1px solid #333; padding: 15px; border-radius: 8px; font-family: inherit; font-size: 1rem; line-height: 1.6; resize: none; box-sizing: border-box; }
+        /* ABOUT & ACCORDION STYLES */
+        #about-content { width: 85%; height: 85%; display: flex; flex-direction: column; text-align: left; }
+        details { width: 100%; margin-bottom: 15px; }
+        summary { font-size: 1.1rem; font-weight: bold; color: #4caf50; cursor: pointer; outline: none; list-style: none; text-align: center; padding: 10px; border: 1px solid #333; border-radius: 8px; background: #111; }
+        summary::-webkit-details-marker { display: none; }
+        .about-text { font-size: 1rem; color: #ccc; line-height: 1.6; padding-top: 15px; }
+        
+        /* TODO BOX - Font size and line height increased by 20% */
+        #todo-box { flex-grow: 1; width: 100%; margin-top: 10px; margin-bottom: 20px; background: #111; color: #ccc; border: 1px solid #333; padding: 15px; border-radius: 8px; font-family: inherit; font-size: 1.2rem; line-height: 1.92; resize: none; box-sizing: border-box; }
         #todo-box:focus { outline: none; border-color: #00ff66; }
     </style>
 </head>
@@ -121,8 +128,16 @@
         <button style="position:absolute; top:20px; right:25px; background:none; border:none; color:#fff; font-size:2.5rem;" onclick="toggleAbout()">✕</button>
         <h2 style="color:#00ff66; margin-bottom: 15px;">ABOUT TRACKER</h2>
         <div id="about-content">
-            <p>Welcome, this app attempts to make other forms of travel a bit more like a train journey by showing you the names of the suburbs you pass through, as you travel. The Always On button will keep the app persistently on the screen and the Log button gives a history of suburbs passed with a time stamp. And before you do reach your destination you can put a to do list or whatever you'd like to remember in the text box below.</p>
-            <h2 style="color:#00ff66; margin-top: 15px; margin-bottom: 5px; font-size: 1.5rem; text-align: center;">TO DO / IDEAS</h2>
+            
+            <details id="about-accordion" open>
+                <summary>Tap to Hide / Show App Info</summary>
+                <div class="about-text">
+                    Welcome! This app makes road trips feel a bit more like a train journey by announcing the names of the suburbs you pass through. It displays live travel data, including your current speed and heading, as well as local weather details like temperature, wind speed, and UV index.<br><br>
+                    The <b>Always On</b> button prevents your screen from going to sleep while you travel, and the <b>Log</b> button records a timestamped history of your route.
+                </div>
+            </details>
+
+            <h2 style="color:#00ff66; margin-top: 10px; margin-bottom: 5px; font-size: 1.5rem; text-align: center;">TO DO / IDEAS</h2>
             <textarea id="todo-box" placeholder="Type notes or tasks to remember here..."></textarea>
         </div>
     </div>
@@ -157,14 +172,12 @@
                 const s = pos.coords.speed ? Math.round(pos.coords.speed * 3.6) : 0;
                 document.getElementById('speed-val').innerText = s + " km / h";
                 
-                // Fade in metrics ONLY when speed is greater than 4 km/h
                 if (s > 4 && pos.coords.heading !== null && !isNaN(pos.coords.heading)) {
                     document.getElementById('needle-pivot').style.opacity = '1';
                     document.getElementById('speed-val').style.opacity = '1';
                     document.getElementById('heading-val').style.opacity = '1';
                 }
 
-                // Update heading data in the background (or visible if > 4km/h)
                 if (pos.coords.heading !== null && !isNaN(pos.coords.heading)) {
                     document.getElementById('heading-val').innerHTML = `${getCard(pos.coords.heading)}<span class="sub-text">${Math.round(pos.coords.heading)}°</span>`;
                     document.getElementById('needle-pivot').style.transform = `rotate(${-pos.coords.heading}deg)`;
