@@ -8,7 +8,7 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="theme-color" content="#000000">
 
-    <title>Suburb Tracker v21</title>
+    <title>Suburb Tracker v23</title>
     <style>
         body { background-color: #000; color: #fff; font-family: 'Segoe UI', Arial, sans-serif; text-align: center; margin: 0; padding-top: 35px; display: flex; flex-direction: column; align-items: center; height: 100vh; overflow: hidden; }
         
@@ -67,7 +67,7 @@
         summary::-webkit-details-marker { display: none; }
         .about-text { font-size: 1rem; color: #ccc; line-height: 1.6; padding-top: 15px; }
         
-        /* TODO BOX - Font size and line height increased by 20% */
+        /* TODO BOX */
         #todo-box { flex-grow: 1; width: 100%; margin-top: 10px; margin-bottom: 20px; background: #111; color: #ccc; border: 1px solid #333; padding: 15px; border-radius: 8px; font-family: inherit; font-size: 1.2rem; line-height: 1.92; resize: none; box-sizing: border-box; }
         #todo-box:focus { outline: none; border-color: #00ff66; }
     </style>
@@ -172,13 +172,11 @@
                 const s = pos.coords.speed ? Math.round(pos.coords.speed * 3.6) : 0;
                 document.getElementById('speed-val').innerText = s + " km / h";
                 
-                if (s > 4 && pos.coords.heading !== null && !isNaN(pos.coords.heading)) {
+                if (pos.coords.heading !== null && !isNaN(pos.coords.heading)) {
                     document.getElementById('needle-pivot').style.opacity = '1';
                     document.getElementById('speed-val').style.opacity = '1';
                     document.getElementById('heading-val').style.opacity = '1';
-                }
-
-                if (pos.coords.heading !== null && !isNaN(pos.coords.heading)) {
+                    
                     document.getElementById('heading-val').innerHTML = `${getCard(pos.coords.heading)}<span class="sub-text">${Math.round(pos.coords.heading)}°</span>`;
                     document.getElementById('needle-pivot').style.transform = `rotate(${-pos.coords.heading}deg)`;
                 }
@@ -188,7 +186,8 @@
                     dist = calcDist(lastLat, lastLon, pos.coords.latitude, pos.coords.longitude);
                 }
 
-                if (lastLat === null || dist > 400) {
+                // HYBRID TRIGGER: Update if moved > 20m AND at least 20 seconds have passed since last update
+                if (lastLat === null || (dist > 20 && Date.now() - lastUpdate > 20000)) {
                     updateLoc(pos.coords.latitude, pos.coords.longitude);
                     lastLat = pos.coords.latitude;
                     lastLon = pos.coords.longitude;
@@ -200,13 +199,16 @@
 
         async function updateLoc(lat, lon) {
             try {
+                // Timer is reset immediately to enforce the 20-second speed limit on requests
+                lastUpdate = Date.now(); 
+                
                 const res = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}&zoom=14`);
                 const data = await res.json();
                 let sub = data.address.suburb || data.address.town || data.address.village || "Unknown";
                 sub = sub.split(' ').map(w => w[0].toUpperCase() + w.slice(1).toLowerCase()).join(' ');
 
                 if (sub !== lastSub && sub !== "Unknown") {
-                    lastSub = sub; lastUpdate = Date.now();
+                    lastSub = sub;
                     
                     const wRes = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,wind_speed_10m,wind_direction_10m,uv_index&timezone=auto`);
                     const w = await wRes.json();
