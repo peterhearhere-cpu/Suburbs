@@ -8,12 +8,12 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="theme-color" content="#000000">
 
-    <title>Suburb Tracker v19</title>
+    <title>Suburb Tracker v20</title>
     <style>
         body { background-color: #000; color: #fff; font-family: 'Segoe UI', Arial, sans-serif; text-align: center; margin: 0; padding-top: 35px; display: flex; flex-direction: column; align-items: center; height: 100vh; overflow: hidden; }
         
         .controls { width: 92%; display: flex; justify-content: space-between; margin-bottom: 25px; }
-        .btn { background-color: #1a1a1a; color: #eee; border: 1px solid #333; padding: 12px; font-size: 0.9rem; border-radius: 12px; width: 47%; font-weight: bold; }
+        .btn { background-color: #1a1a1a; color: #eee; border: 1px solid #333; padding: 12px; font-size: 0.9rem; border-radius: 12px; width: 47%; font-weight: bold; cursor: pointer; }
         .btn.active { background-color: #2e7d32; border-color: #4caf50; color: white; }
 
         /* COMPASS */
@@ -53,8 +53,6 @@
         /* MAIN DISPLAY AREA */
         #suburb-display { flex-grow: 1; display: flex; flex-direction: column; justify-content: center; width: 100%; align-items: center; }
         .suburb-name { font-size: 4rem; font-weight: 900; margin: 0; line-height: 0.9; text-transform: uppercase; transition: color 0.5s ease; }
-        
-        .about-btn { background: none; border: 1px solid #222; color: #444; padding: 8px 15px; border-radius: 20px; font-size: 0.8rem; margin-top: 20px; cursor: pointer; }
 
         /* OVERLAYS */
         .overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.98); z-index: 100; flex-direction: column; align-items: center; padding-top: 60px; }
@@ -106,14 +104,16 @@
         </div>
         
         <h1 class="suburb-name">Locating...</h1>
-        <button class="about-btn" onclick="toggleAbout()">About This App</button>
+        
+        <button class="btn" style="width: 60%; margin-top: 20px;" onclick="toggleAbout()">About / To Do</button>
+        
         <div id="last-updated" style="font-size: 0.7rem; color: #222; margin-top: 10px;">GPS Standing By</div>
     </div>
 
     <div id="history-overlay" class="overlay">
         <button style="position:absolute; top:20px; right:25px; background:none; border:none; color:#fff; font-size:2.5rem;" onclick="toggleHistory()">✕</button>
         <h2 style="margin-bottom:20px;">JOURNEY LOG</h2>
-        <button style="background:#b71c1c; color:#fff; border:none; padding:12px 24px; border-radius:8px; font-weight:bold;" onclick="clearLog()">Clear History</button>
+        <button style="background:#b71c1c; color:#fff; border:none; padding:12px 24px; border-radius:8px; font-weight:bold; cursor: pointer;" onclick="clearLog()">Clear History</button>
         <div id="log-content" style="width:100%; overflow-y:auto; margin-top:30px;"></div>
     </div>
 
@@ -157,12 +157,15 @@
                 const s = pos.coords.speed ? Math.round(pos.coords.speed * 3.6) : 0;
                 document.getElementById('speed-val').innerText = s + " km / h";
                 
-                // Fade in metrics when a valid GPS heading is found
-                if (pos.coords.heading !== null && !isNaN(pos.coords.heading)) {
+                // Fade in metrics ONLY when speed is greater than 4 km/h
+                if (s > 4 && pos.coords.heading !== null && !isNaN(pos.coords.heading)) {
                     document.getElementById('needle-pivot').style.opacity = '1';
                     document.getElementById('speed-val').style.opacity = '1';
                     document.getElementById('heading-val').style.opacity = '1';
+                }
 
+                // Update heading data in the background (or visible if > 4km/h)
+                if (pos.coords.heading !== null && !isNaN(pos.coords.heading)) {
                     document.getElementById('heading-val').innerHTML = `${getCard(pos.coords.heading)}<span class="sub-text">${Math.round(pos.coords.heading)}°</span>`;
                     document.getElementById('needle-pivot').style.transform = `rotate(${-pos.coords.heading}deg)`;
                 }
@@ -202,7 +205,6 @@
                     document.querySelector('.suburb-name').innerText = sub;
                     document.querySelector('.suburb-name').style.color = color;
                     
-                    // Move the train
                     trainPos += 20;
                     if (trainPos > 85) trainPos = 0;
                     document.getElementById('train-container').style.left = trainPos + '%';
