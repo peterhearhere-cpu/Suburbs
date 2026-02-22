@@ -1,113 +1,182 @@
 <!DOCTYPE html>
-
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<link rel="manifest" href="manifest.json">
-<meta name="mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="theme-color" content="#000000">
-<title>Suburb Tracker v16</title>
-<style>
-body { background-color: #000; color: #fff; font-family: 'Segoe UI', Arial, sans-serif; text-align: center; margin: 0; padding-top: 10px; display: flex; flex-direction: column; align-items: center; height: 100vh; overflow: hidden; }
-.controls { width: 92%; display: flex; justify-content: space-between; margin-bottom: 25px; }
-.btn { background-color: #1a1a1a; color: #eee; border: 1px solid #333; padding: 12px; font-size: 0.9rem; border-radius: 12px; width: 47%; font-weight: bold; }
-.btn.active { background-color: #2e7d32; border-color: #4caf50; color: white; }
-#compass-box { width: 100px; height: 100px; border: 2px solid #222; border-radius: 50%; position: relative; margin-bottom: 25px; background: radial-gradient(circle, #0a0a0a 0%, #000 100%); }
-#needle-pivot { width: 100%; height: 100%; position: absolute; transition: transform 0.15s linear; }
-.needle-n { position: absolute; top: 12px; left: 48px; width: 4px; height: 38px; background: #ff0000; border-radius: 4px 4px 0 0; }
-.needle-s { position: absolute; top: 50px; left: 48px; width: 4px; height: 38px; background: #0077ff; border-radius: 0 0 4px 4px; }
-.info-grid { display: grid; grid-template-columns: repeat(4, 1fr); width: 95%; margin-bottom: 10px; padding-bottom: 15px; border-bottom: 1px solid #111; gap: 8px; }
-.info-box { display: flex; flex-direction: column; align-items: center; }
-.info-label { font-size: 1.3rem; color: #666; text-transform: uppercase; font-weight: bold; margin-bottom: 5px; }
-.info-value { font-size: 1.45rem; font-weight: 900; color: #00ff66; letter-spacing: -0.5px; }
-.sub-text { font-size: 0.9rem; color: #ffff00; font-weight: bold; display: block; }
-#suburb-display { flex-grow: 1; display: flex; flex-direction: column; justify-content: center; width: 100%; }
-.icon-display { font-size: 6.5rem; margin-bottom: 10px; }
-.suburb-name { font-size: 4rem; font-weight: 900; margin: 0; line-height: 0.9; text-transform: uppercase; }
-.about-btn { background: none; border: 1px solid #222; color: #444; padding: 8px 15px; border-radius: 20px; font-size: 0.8rem; margin-top: 20px; cursor: pointer; }
-.overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.98); z-index: 100; flex-direction: column; align-items: center; padding-top: 60px; }
-.history-item { width: 88%; padding: 18px; border-bottom: 1px solid #111; display: flex; justify-content: space-between; align-items: center; }
-</style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <link rel="manifest" href="manifest.json">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="theme-color" content="#000000">
+
+    <title>Suburb Tracker v13</title>
+    <style>
+        body { background-color: #000; color: #fff; font-family: Arial, sans-serif; text-align: center; margin: 0; padding-top: env(safe-area-inset-top, 10px); display: flex; flex-direction: column; align-items: center; height: 100vh; overflow: hidden; }
+        
+        .controls { width: 90%; display: flex; justify-content: space-between; margin-top: 10px; margin-bottom: 10px; }
+        .btn { background-color: #222; color: #fff; border: 1px solid #444; padding: 12px; font-size: 0.9rem; border-radius: 10px; width: 48%; }
+        .btn.active { background-color: #28a745; border-color: #1e7e34; }
+
+        /* COMPASS - Half Red / Half Blue */
+        #compass-outer {
+            width: 100px; height: 100px;
+            border: 3px solid #333;
+            border-radius: 50%;
+            position: relative;
+            margin: 10px 0;
+            background: #050505;
+        }
+        #needle-wrapper {
+            width: 100%; height: 100%;
+            position: absolute;
+            transition: transform 0.1s linear;
+        }
+        .needle-red { 
+            position: absolute; top: 10px; left: 48px; 
+            width: 4px; height: 40px; background: red; border-radius: 4px 4px 0 0;
+        }
+        .needle-blue { 
+            position: absolute; top: 50px; left: 48px; 
+            width: 4px; height: 40px; background: blue; border-radius: 0 0 4px 4px;
+        }
+
+        .info-grid { display: flex; justify-content: space-around; flex-wrap: wrap; width: 95%; margin-bottom: 10px; padding-bottom: 10px; border-bottom: 1px solid #222; }
+        .info-box { text-align: center; flex: 1; }
+        .info-label { font-size: 0.7rem; color: #666; text-transform: uppercase; }
+        .info-value { font-size: 1.4rem; font-weight: bold; }
+        .sub-text { font-size: 0.8rem; color: #aaa; display: block; }
+
+        #speed-val { color: #0f0; }
+        #temp-val { color: #ffa500; }
+
+        #suburb-display { flex-grow: 1; display: flex; flex-direction: column; justify-content: center; width: 100%; }
+        .suburb-name { font-size: 3.8rem; font-weight: 900; margin: 0; line-height: 1; }
+        .icon-display { font-size: 6rem; margin-bottom: 10px; }
+        #last-updated { font-size: 0.75rem; color: #333; margin-top: 15px; }
+
+        #history-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.95); z-index: 100; flex-direction: column; align-items: center; padding-top: 50px; }
+        .history-item { width: 85%; padding: 15px; border-bottom: 1px solid #222; display: flex; justify-content: space-between; align-items: center; }
+    </style>
 </head>
 <body>
-<div class="controls">
-<button id="wake-btn" class="btn" onclick="toggleWake()">Always On</button>
-<button id="hist-btn" class="btn" onclick="toggleHistory()">Log 📜</button>
-</div>
-<div id="compass-box">
-<div id="needle-pivot"><div class="needle-n"></div><div class="needle-s"></div></div>
-<span style="position:absolute; top:-18px; left:43px; color:red; font-size:11px; font-weight:bold;">NORTH</span>
-</div>
-<div class="info-grid">
-<div class="info-box"><span class="info-label">Speed</span><div id="speed-val" class="info-value">0 km / h</div></div>
-<div class="info-box"><span class="info-label">Travel</span><div id="heading-val" class="info-value">--</div></div>
-<div class="info-box"><span class="info-label">Wind</span><div id="wind-val" class="info-value">--</div></div>
-<div class="info-box"><span class="info-label">Temp</span><div id="temp-val" class="info-value">--</div></div>
-</div>
-<div id="suburb-display">
-<div class="icon-display">🛰️</div>
-<h1 class="suburb-name">Locating...</h1>
-<button class="about-btn" onclick="toggleAbout()">About This App</button>
-<div id="last-updated" style="font-size: 0.7rem; color: #222; margin-top: 10px;">GPS Standing By</div>
-</div>
-<div id="history-overlay" class="overlay">
-<button style="position:absolute; top:20px; right:25px; background:none; border:none; color:#fff; font-size:2.5rem;" onclick="toggleHistory()">✕</button>
-<h2 style="margin-bottom:20px;">JOURNEY LOG</h2>
-<button style="background:#b71c1c; color:#fff; border:none; padding:12px 24px; border-radius:8px; font-weight:bold;" onclick="clearLog()">Clear History</button>
-<div id="log-content" style="width:100%; overflow-y:auto; margin-top:30px;"></div>
-</div>
-<div id="about-overlay" class="overlay">
-<button style="position:absolute; top:20px; right:25px; background:none; border:none; color:#fff; font-size:2.5rem;" onclick="toggleAbout()">✕</button>
-<h2 style="color:#00ff66;">ABOUT TRACKER</h2>
-<div style="width: 80%; text-align: left; line-height: 1.6; color: #ccc;">
-<p>Welcome, Grandpa Pete! This app is your co-pilot.</p>
-<p>• <b>Suburb Tracking:</b> GPS-based location.</p>
-<p>• <b>Live Data:</b> Speed, heading, and weather.</p>
-<p>• <b>Compass:</b> Red points North relative to your phone.</p>
-<p>• <b>History:</b> Saves your route automatically.</p>
-</div>
-</div>
-<script>
-let lastSub = ""; let history = JSON.parse(localStorage.getItem('peteTripLog') || "[]");
-let wakeLock = null; let lastUpdate = 0;
-function getCard(deg) { if (deg === null || isNaN(deg)) return "--"; const dirs = ["N", "NE", "E", "SE", "S", "SW", "W", "NW"]; return dirs[Math.round(((deg %= 360) < 0 ? deg + 360 : deg) / 45) % 8]; }
-window.addEventListener('deviceorientationabsolute', (e) => { if (e.alpha !== null) document.getElementById('needle-pivot').style.transform = rotate(${-e.alpha}deg); }, true);
-if ("geolocation" in navigator) {
-navigator.geolocation.watchPosition(pos => {
-const s = pos.coords.speed ? Math.round(pos.coords.speed * 3.6) : 0;
-document.getElementById('speed-val').innerText = s + " km / h";
-if (pos.coords.heading !== null) { document.getElementById('heading-val').innerHTML = ${getCard(pos.coords.heading)}&lt;span class=&quot;sub-text&quot;&gt;${Math.round(pos.coords.heading)}°&lt;/span&gt;; }
-if (Date.now() - lastUpdate > 30000) updateLoc(pos.coords.latitude, pos.coords.longitude);
-}, null, { enableHighAccuracy: true });
-}
-async function updateLoc(lat, lon) {
-try {
-const res = await fetch(https://nominatim.openstreetmap.org/reverse?format=json&amp;lat=${lat}&amp;lon=${lon}&amp;zoom=14);
-const data = await res.json();
-let sub = data.address.suburb || data.address.town || data.address.village || "Unknown";
-sub = sub.split(' ').map(w => w[0].toUpperCase() + w.slice(1).toLowerCase()).join(' ');
-if (sub !== lastSub && sub !== "Unknown") {
-lastSub = sub; lastUpdate = Date.now();
-const wRes = await fetch(https://api.open-meteo.com/v1/forecast?latitude=${lat}&amp;longitude=${lon}&amp;current=temperature_2m,wind_speed_10m,wind_direction_10m&amp;timezone=auto);
-const w = await wRes.json();
-document.getElementById('temp-val').innerText = Math.round(w.current.temperature_2m) + "°";
-document.getElementById('wind-val').innerHTML = ${Math.round(w.current.wind_speed_10m)}k&lt;span class=&quot;sub-text&quot;&gt;${getCard(w.current.wind_direction_10m)}&lt;/span&gt;;
-const color = ["#FFD700", "#00FFFF", "#FF69B4", "#ADFF2F", "#FFA500"][Math.floor(Math.random() * 5)];
-document.querySelector('.suburb-name').innerText = sub;
-document.querySelector('.suburb-name').style.color = color;
-const now = new Date();
-history.unshift({ name: sub, color, time: ${now.toLocaleDateString(&#39;en-AU&#39;, {weekday:&#39;short&#39;, day:&#39;numeric&#39;})} ${now.toLocaleTimeString([], {hour:&#39;2-digit&#39;, minute:&#39;2-digit&#39;})} });
-localStorage.setItem('peteTripLog', JSON.stringify(history));
-document.getElementById('last-updated').innerText = Updated: ${now.toLocaleTimeString([], {hour:&#39;2-digit&#39;, minute:&#39;2-digit&#39;})};
-}
-} catch (e) {}
-}
-function toggleHistory() { const o = document.getElementById('history-overlay'); o.style.display = (o.style.display === "flex") ? "none" : "flex"; document.getElementById('log-content').innerHTML = history.map(h => &lt;div class=&quot;history-item&quot; style=&quot;border-left:5px solid ${h.color}&quot;&gt;&lt;b style=&quot;color:${h.color}&quot;&gt;${h.name}&lt;/b&gt;&lt;span style=&quot;color:#444; font-size:0.8rem;&quot;&gt;${h.time}&lt;/span&gt;&lt;/div&gt;).join(''); }
-function toggleAbout() { const o = document.getElementById('about-overlay'); o.style.display = (o.style.display === "flex") ? "none" : "flex"; }
-function clearLog() { if(confirm("Clear log?")) { history = []; localStorage.removeItem('peteTripLog'); toggleHistory(); } }
-async function toggleWake() { const b = document.getElementById('wake-btn'); if (!wakeLock) { try { wakeLock = await navigator.wakeLock.request('screen'); b.classList.add('active'); } catch (err) {} } else { wakeLock.release(); wakeLock = null; b.classList.remove('active'); } }
-</script>
+
+    <div class="controls">
+        <button id="wake-btn" class="btn" onclick="toggleWake()">Screen: Auto</button>
+        <button id="hist-btn" class="btn" onclick="toggleHistory()">History 📜</button>
+    </div>
+
+    <div id="compass-outer">
+        <div id="needle-wrapper">
+            <div class="needle-red"></div>
+            <div class="needle-blue"></div>
+        </div>
+        <span style="position:absolute; top:2px; left:45px; color:red; font-size:12px; font-weight:bold;">N</span>
+    </div>
+
+    <div class="info-grid">
+        <div class="info-box"><span class="info-label">Speed</span><div id="speed-val" class="info-value">0</div></div>
+        <div class="info-box"><span class="info-label">Travel</span><div id="dir-val" class="info-value">--</div></div>
+        <div class="info-box"><span class="info-label">Wind</span><div id="wind-val" class="info-value">--</div></div>
+        <div class="info-box"><span class="info-label">Temp</span><div id="temp-val" class="info-value">--</div></div>
+    </div>
+
+    <div id="suburb-display">
+        <div class="icon-display">🛰️</div>
+        <h1 class="suburb-name">Locating...</h1>
+        <div id="last-updated">Updating GPS...</div>
+    </div>
+
+    <div id="history-overlay">
+        <button style="position:absolute; top:20px; right:20px; background:none; border:none; color:#fff; font-size:2rem;" onclick="toggleHistory()">✕</button>
+        <h2 style="margin-bottom:20px;">Journey Log</h2>
+        <button style="background:#d33; color:#fff; border:none; padding:10px 20px; border-radius:5px;" onclick="clearLog()">Clear Records</button>
+        <div id="log-content" style="width:100%; overflow-y:auto; margin-top:20px;"></div>
+    </div>
+
+    <script>
+        let lastSub = ""; let history = JSON.parse(localStorage.getItem('tripLog') || "[]");
+        let wakeLock = null; let lastUpdate = 0;
+
+        // --- COMPASS & HEADING ---
+        function getCard(deg) { 
+            if (deg === null || isNaN(deg)) return "--";
+            const dirs = ["N", "NE", "E", "SE", "S", "SW", "W", "NW"];
+            return dirs[Math.round(((deg %= 360) < 0 ? deg + 360 : deg) / 45) % 8];
+        }
+
+        // Listen for internal phone compass
+        window.addEventListener('deviceorientationabsolute', (e) => {
+            let heading = e.alpha; // Magnetic North
+            if (heading !== null) {
+                // We rotate the needle wrapper -heading so red always points North
+                document.getElementById('needle-wrapper').style.transform = `rotate(${-heading}deg)`;
+            }
+        }, true);
+
+        // --- GPS ---
+        if ("geolocation" in navigator) {
+            navigator.geolocation.watchPosition(pos => {
+                const s = pos.coords.speed ? Math.round(pos.coords.speed * 3.6) : 0;
+                const h = pos.coords.heading;
+                document.getElementById('speed-val').innerText = s + " km/h";
+                if (h !== null) document.getElementById('dir-val').innerHTML = `${getCard(h)}<span class="sub-text">${Math.round(h)}°</span>`;
+
+                if (Date.now() - lastUpdate > 30000) {
+                    updateLoc(pos.coords.latitude, pos.coords.longitude);
+                }
+            }, null, { enableHighAccuracy: true });
+        }
+
+        async function updateLoc(lat, lon) {
+            try {
+                const res = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}&zoom=14`);
+                const data = await res.json();
+                let sub = data.address.suburb || data.address.town || data.address.village || "Unknown";
+                sub = sub.split(' ').map(w => w[0].toUpperCase() + w.slice(1).toLowerCase()).join(' ');
+
+                if (sub !== lastSub && sub !== "Unknown") {
+                    lastSub = sub; lastUpdate = Date.now();
+                    
+                    // Weather
+                    const wRes = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,wind_speed_10m,wind_direction_10m&timezone=auto`);
+                    const w = await wRes.json();
+                    
+                    document.getElementById('temp-val').innerHTML = Math.round(w.current.temperature_2m) + "°";
+                    document.getElementById('wind-val').innerHTML = Math.round(w.current.wind_speed_10m) + "k<span class="sub-text">${getCard(w.current.wind_direction_10m)}</span>";
+                    
+                    // Display
+                    const color = ["#FFD700", "#00FFFF", "#FF69B4", "#ADFF2F", "#FFA500"][Math.floor(Math.random() * 5)];
+                    document.querySelector('.suburb-name').innerText = sub;
+                    document.querySelector('.suburb-name').style.color = color;
+                    
+                    const now = new Date();
+                    const ts = `${now.toLocaleDateString('en-AU', {weekday:'short', day:'numeric'})} ${now.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}`;
+                    document.getElementById('last-updated').innerText = `Refreshed: ${now.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}`;
+
+                    history.unshift({ name: sub, color, time: ts });
+                    localStorage.setItem('tripLog', JSON.stringify(history));
+                }
+            } catch (e) {}
+        }
+
+        function toggleHistory() {
+            const o = document.getElementById('history-overlay');
+            o.style.display = (o.style.display === "flex") ? "none" : "flex";
+            document.getElementById('log-content').innerHTML = history.map(h => `<div class="history-item" style="border-left:4px solid ${h.color}"><b style="color:${h.color}">${h.name}</b><span style="color:#666; font-size:0.8rem;">${h.time}</span></div>`).join('');
+        }
+
+        function clearLog() { if(confirm("Delete all?")) { history = []; localStorage.removeItem('tripLog'); toggleHistory(); } }
+        async function toggleWake() { 
+            if (!wakeLock) { 
+                wakeLock = await navigator.wakeLock.request('screen'); 
+                document.getElementById('wake-btn').classList.add('active'); 
+                document.getElementById('wake-btn').innerText = "Screen: ON";
+            } else { 
+                wakeLock.release(); wakeLock = null; 
+                document.getElementById('wake-btn').classList.remove('active'); 
+                document.getElementById('wake-btn').innerText = "Screen: Auto";
+            } 
+        }
+    </script>
 </body>
 </html>
