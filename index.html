@@ -8,9 +8,8 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="theme-color" content="#000000">
 
-    <title>Suburb Tracker v17</title>
+    <title>Suburb Tracker v18</title>
     <style>
-        /* Added 35px padding-top for extra black space at the top */
         body { background-color: #000; color: #fff; font-family: 'Segoe UI', Arial, sans-serif; text-align: center; margin: 0; padding-top: 35px; display: flex; flex-direction: column; align-items: center; height: 100vh; overflow: hidden; }
         
         .controls { width: 92%; display: flex; justify-content: space-between; margin-bottom: 25px; }
@@ -18,39 +17,54 @@
         .btn.active { background-color: #2e7d32; border-color: #4caf50; color: white; }
 
         /* COMPASS */
-        #compass-box {
+        #compass-container {
+            position: relative;
             width: 100px; height: 100px;
+            margin-top: 10px;
+            margin-bottom: 40px; 
+        }
+        #compass-box {
+            width: 100%; height: 100%;
             border: 2px solid #222;
             border-radius: 50%;
-            position: relative;
-            margin-bottom: 25px; 
+            position: absolute;
             background: radial-gradient(circle, #0a0a0a 0%, #000 100%);
         }
         #needle-pivot { width: 100%; height: 100%; position: absolute; transition: transform 0.15s linear; }
         .needle-n { position: absolute; top: 12px; left: 48px; width: 4px; height: 38px; background: #ff0000; border-radius: 4px 4px 0 0; }
         .needle-s { position: absolute; top: 50px; left: 48px; width: 4px; height: 38px; background: #0077ff; border-radius: 0 0 4px 4px; }
 
-        /* INFO GRID - Split into two rows */
+        .compass-label { position: absolute; font-size: 16px; font-weight: bold; }
+        .label-n { top: -25px; left: 43px; color: #ff3333; }
+        .label-s { bottom: -25px; left: 45px; color: #add8e6; } /* Pale bright blue */
+        .label-w { top: 38px; left: -25px; color: #ffffff; }
+        .label-e { top: 38px; right: -25px; color: #ffffff; }
+
+        /* INFO GRID */
         .info-container { width: 95%; margin-bottom: 10px; padding-bottom: 15px; border-bottom: 1px solid #111; display: flex; flex-direction: column; align-items: center; gap: 15px; }
         .info-row-3 { display: grid; grid-template-columns: repeat(3, 1fr); width: 100%; gap: 8px; }
         .info-row-2 { display: grid; grid-template-columns: repeat(2, 1fr); width: 66%; gap: 8px; }
         .info-box { display: flex; flex-direction: column; align-items: center; }
         
-        /* Labels updated to white */
         .info-label { font-size: 1.2rem; color: #ffffff; text-transform: uppercase; font-weight: bold; margin-bottom: 5px; }
         .info-value { font-size: 1.45rem; font-weight: 900; color: #00ff66; letter-spacing: -0.5px; }
         .sub-text { font-size: 0.9rem; color: #ffff00; font-weight: bold; display: block; }
 
         /* MAIN DISPLAY AREA */
-        #suburb-display { flex-grow: 1; display: flex; flex-direction: column; justify-content: center; width: 100%; }
-        .icon-display { font-size: 6.5rem; margin-bottom: 10px; }
-        .suburb-name { font-size: 4rem; font-weight: 900; margin: 0; line-height: 0.9; text-transform: uppercase; }
+        #suburb-display { flex-grow: 1; display: flex; flex-direction: column; justify-content: center; width: 100%; align-items: center; }
+        .icon-display { margin-bottom: 10px; color: #888; transition: color 0.5s ease; }
+        .suburb-name { font-size: 4rem; font-weight: 900; margin: 0; line-height: 0.9; text-transform: uppercase; transition: color 0.5s ease; }
         
         .about-btn { background: none; border: 1px solid #222; color: #444; padding: 8px 15px; border-radius: 20px; font-size: 0.8rem; margin-top: 20px; cursor: pointer; }
 
         /* OVERLAYS */
         .overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.98); z-index: 100; flex-direction: column; align-items: center; padding-top: 60px; }
-        .history-item { width: 88%; padding: 18px; border-bottom: 1px solid #111; display: flex; justify-content: space-between; align-items: center; }
+        .history-item { width: 88%; padding: 18px; border-bottom: 1px solid #111; display: flex; flex-direction: column; align-items: flex-start; }
+        .history-suburb { font-size: 1.3rem; font-weight: bold; margin-bottom: 5px; }
+        .history-time { font-size: 1.3rem; color: #ffffff; }
+
+        #todo-box { width: 100%; height: 120px; margin-top: 15px; background: #111; color: #fff; border: 1px solid #333; padding: 15px; border-radius: 8px; font-family: inherit; font-size: 1rem; resize: none; box-sizing: border-box; }
+        #todo-box:focus { outline: none; border-color: #00ff66; }
     </style>
 </head>
 <body>
@@ -60,9 +74,14 @@
         <button id="hist-btn" class="btn" onclick="toggleHistory()">Log 📜</button>
     </div>
 
-    <div id="compass-box">
-        <div id="needle-pivot"><div class="needle-n"></div><div class="needle-s"></div></div>
-        <span style="position:absolute; top:-18px; left:43px; color:red; font-size:11px; font-weight:bold;">NORTH</span>
+    <div id="compass-container">
+        <span class="compass-label label-n">N</span>
+        <span class="compass-label label-s">S</span>
+        <span class="compass-label label-w">W</span>
+        <span class="compass-label label-e">E</span>
+        <div id="compass-box">
+            <div id="needle-pivot"><div class="needle-n"></div><div class="needle-s"></div></div>
+        </div>
     </div>
 
     <div class="info-container">
@@ -78,7 +97,11 @@
     </div>
 
     <div id="suburb-display">
-        <div class="icon-display">🛰️</div>
+        <div class="icon-display">
+            <svg id="train-icon" width="90" height="90" viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+              <path d="M12 2c-4.42 0-8 .5-8 4v9.5C4 17.43 5.57 19 7.5 19L6 20.5v.5h12v-.5L16.5 19c1.93 0 3.5-1.57 3.5-3.5V6c0-3.5-3.58-4-8-4zM7.5 17c-.83 0-1.5-.67-1.5-1.5S6.67 14 7.5 14s1.5.67 1.5 1.5S8.33 17 7.5 17zm3.5-7H6V6h5v4zm2 0V6h5v4h-5zm3.5 7c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5z"/>
+            </svg>
+        </div>
         <h1 class="suburb-name">Locating...</h1>
         <button class="about-btn" onclick="toggleAbout()">About This App</button>
         <div id="last-updated" style="font-size: 0.7rem; color: #222; margin-top: 10px;">GPS Standing By</div>
@@ -94,8 +117,9 @@
     <div id="about-overlay" class="overlay">
         <button style="position:absolute; top:20px; right:25px; background:none; border:none; color:#fff; font-size:2.5rem;" onclick="toggleAbout()">✕</button>
         <h2 style="color:#00ff66;">ABOUT TRACKER</h2>
-        <div style="width: 80%; text-align: left; line-height: 1.6; color: #ccc;">
-            <p>Welcome, this app is designed to show you the names of the suburbs you pass through as you travel. The Always On button will keep the app on whilst your travelling and the Log button will give you a history of the suburbs you travel through with a time stamp.</p>
+        <div style="width: 85%; text-align: left; line-height: 1.6; color: #ccc;">
+            <p>Welcome, this app attempts to make other forms of travel a bit more like a train journey by showing you the names of the suburbs you pass through, as you travel. The Always On button will keep the app persistently on the screen and the Log button gives a history of suburbs passed with a time stamp. And before you do reach your destination you can put a to do list or whatever you'd like to remember in the text box below.</p>
+            <textarea id="todo-box" placeholder="Type notes or tasks to remember here..."></textarea>
         </div>
     </div>
 
@@ -103,6 +127,13 @@
         let lastSub = ""; let history = JSON.parse(localStorage.getItem('peteTripLog') || "[]");
         let wakeLock = null; let lastUpdate = 0;
         let lastLat = null; let lastLon = null;
+        let currentSpeed = 0;
+
+        // Load saved To-Do list
+        document.getElementById('todo-box').value = localStorage.getItem('peteTodo') || "";
+        document.getElementById('todo-box').addEventListener('input', (e) => {
+            localStorage.setItem('peteTodo', e.target.value);
+        });
 
         function getCard(deg) { 
             if (deg === null || isNaN(deg)) return "--";
@@ -110,7 +141,6 @@
             return dirs[Math.round(((deg %= 360) < 0 ? deg + 360 : deg) / 45) % 8];
         }
 
-        // Haversine formula to calculate distance in meters between two coordinates
         function calcDist(lat1, lon1, lat2, lon2) {
             const R = 6371e3; 
             const p1 = lat1 * Math.PI/180, p2 = lat2 * Math.PI/180;
@@ -119,23 +149,22 @@
             return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
         }
 
-        // Handle Compass Orientation
         function handleOrientation(e) {
-            if (e.alpha !== null) document.getElementById('needle-pivot').style.transform = `rotate(${-e.alpha}deg)`;
+            if (e.alpha !== null && currentSpeed <= 5) {
+                document.getElementById('needle-pivot').style.transform = `rotate(${-e.alpha}deg)`;
+            }
         }
 
-        // Initialize compass immediately if permissions aren't required
         if (typeof DeviceOrientationEvent !== 'undefined' && typeof DeviceOrientationEvent.requestPermission !== 'function') {
             window.addEventListener('deviceorientationabsolute', handleOrientation, true);
         }
 
         if ("geolocation" in navigator) {
             navigator.geolocation.watchPosition(pos => {
-                const s = pos.coords.speed ? Math.round(pos.coords.speed * 3.6) : 0;
-                document.getElementById('speed-val').innerText = s + " km / h";
+                currentSpeed = pos.coords.speed ? Math.round(pos.coords.speed * 3.6) : 0;
+                document.getElementById('speed-val').innerText = currentSpeed + " km / h";
                 
-                // Use GPS heading if moving > 5km/h (more accurate in cars)
-                if (s > 5 && pos.coords.heading !== null) {
+                if (currentSpeed > 5 && pos.coords.heading !== null) {
                     document.getElementById('heading-val').innerHTML = `${getCard(pos.coords.heading)}<span class="sub-text">${Math.round(pos.coords.heading)}°</span>`;
                     document.getElementById('needle-pivot').style.transform = `rotate(${-pos.coords.heading}deg)`;
                 } else if (pos.coords.heading !== null) {
@@ -147,7 +176,6 @@
                     dist = calcDist(lastLat, lastLon, pos.coords.latitude, pos.coords.longitude);
                 }
 
-                // Update if we've moved more than 400 meters OR if it's our very first location check
                 if (lastLat === null || dist > 400) {
                     updateLoc(pos.coords.latitude, pos.coords.longitude);
                     lastLat = pos.coords.latitude;
@@ -168,7 +196,6 @@
                 if (sub !== lastSub && sub !== "Unknown") {
                     lastSub = sub; lastUpdate = Date.now();
                     
-                    // Added uv_index to the API call
                     const wRes = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,wind_speed_10m,wind_direction_10m,uv_index&timezone=auto`);
                     const w = await wRes.json();
                     document.getElementById('temp-val').innerText = Math.round(w.current.temperature_2m) + "°";
@@ -178,9 +205,12 @@
                     const color = ["#FFD700", "#00FFFF", "#FF69B4", "#ADFF2F", "#FFA500"][Math.floor(Math.random() * 5)];
                     document.querySelector('.suburb-name').innerText = sub;
                     document.querySelector('.suburb-name').style.color = color;
+                    document.getElementById('train-icon').style.color = color;
                     
                     const now = new Date();
-                    history.unshift({ name: sub, color, time: `${now.toLocaleDateString('en-AU', {weekday:'short', day:'numeric'})} ${now.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}` });
+                    const timeString = `${now.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}, ${now.toLocaleDateString('en-AU', {weekday:'short', day:'numeric', month:'short', year:'numeric'})}`;
+                    
+                    history.unshift({ name: sub, color, time: timeString });
                     localStorage.setItem('peteTripLog', JSON.stringify(history));
                     document.getElementById('last-updated').innerText = `Updated: ${now.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}`;
                 }
@@ -190,7 +220,12 @@
         function toggleHistory() {
             const o = document.getElementById('history-overlay');
             o.style.display = (o.style.display === "flex") ? "none" : "flex";
-            document.getElementById('log-content').innerHTML = history.map(h => `<div class="history-item" style="border-left:5px solid ${h.color}"><b style="color:${h.color}">${h.name}</b><span style="color:#444; font-size:0.8rem;">${h.time}</span></div>`).join('');
+            document.getElementById('log-content').innerHTML = history.map(h => `
+                <div class="history-item" style="border-left:5px solid ${h.color}">
+                    <div class="history-suburb" style="color:${h.color}">${h.name}</div>
+                    <div class="history-time">${h.time}</div>
+                </div>
+            `).join('');
         }
 
         function toggleAbout() {
@@ -203,7 +238,6 @@
         async function toggleWake() { 
             const b = document.getElementById('wake-btn');
             
-            // Ask for compass permission if on a device that requires it (like iOS)
             if (typeof DeviceOrientationEvent !== 'undefined' && typeof DeviceOrientationEvent.requestPermission === 'function') {
                 try {
                     const permission = await DeviceOrientationEvent.requestPermission();
