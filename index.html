@@ -8,11 +8,12 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="theme-color" content="#000000">
 
-    <title>Suburb Tracker v26</title>
+    <title>Suburb Tracker v27</title>
     <style>
         body { background-color: #000; color: #fff; font-family: 'Segoe UI', Arial, sans-serif; text-align: center; margin: 0; padding-top: 35px; display: flex; flex-direction: column; align-items: center; height: 100vh; overflow: hidden; }
         
-        .controls { width: 92%; display: flex; justify-content: space-between; margin-bottom: 25px; }
+        /* INCREASED SPACING: Bottom margin doubled from 25px to 50px */
+        .controls { width: 92%; display: flex; justify-content: space-between; margin-bottom: 50px; }
         .btn { background-color: #1a1a1a; color: #eee; border: 1px solid #333; padding: 12px; font-size: 0.9rem; border-radius: 12px; width: 47%; font-weight: bold; cursor: pointer; }
         .btn.active { background-color: #2e7d32; border-color: #4caf50; color: white; }
 
@@ -21,7 +22,8 @@
             position: relative;
             width: 100px; height: 100px;
             margin-top: 10px;
-            margin-bottom: 40px; 
+            /* INCREASED SPACING: Bottom margin doubled from 40px to 80px */
+            margin-bottom: 80px; 
         }
         #compass-box {
             width: 100%; height: 100%;
@@ -42,14 +44,15 @@
 
         /* INFO GRID */
         .info-container { width: 95%; margin-bottom: 0px; padding-bottom: 10px; border-bottom: 1px solid #111; display: flex; flex-direction: column; align-items: center; gap: 15px; }
-        /* Both rows are now 3 columns */
         .info-row { display: grid; grid-template-columns: repeat(3, 1fr); width: 100%; gap: 8px; }
         
         .info-box { display: flex; flex-direction: column; align-items: center; }
         
         .info-label { font-size: 1.2rem; color: #ffffff; text-transform: uppercase; font-weight: bold; margin-bottom: 5px; }
         .info-value { font-size: 1.45rem; font-weight: 900; color: #00ff66; letter-spacing: -0.5px; transition: opacity 0.8s ease; }
-        .sub-text { font-size: 0.9rem; color: #ffff00; font-weight: bold; display: block; }
+        
+        /* FONT SIZE INCREASE: Yellow sub-text increased ~30% (0.9rem -> 1.2rem) */
+        .sub-text { font-size: 1.2rem; color: #ffff00; font-weight: bold; display: block; margin-top: 2px; }
 
         /* MAIN DISPLAY AREA */
         #suburb-display { flex-grow: 1; display: flex; flex-direction: column; justify-content: center; width: 100%; align-items: center; }
@@ -57,12 +60,25 @@
 
         /* LIVE DATE DISPLAY */
         #live-date {
-            margin-top: 15px;
-            font-size: 1.2rem; /* Matching info-label size */
+            /* INCREASED SPACING: Margin top increased */
+            margin-top: 40px;
+            /* FONT SIZE INCREASE: Increased ~30% (1.2rem -> 1.6rem) */
+            font-size: 1.6rem; 
             color: #ffffff;
             font-weight: bold;
             text-transform: uppercase;
         }
+
+        /* TRAIN & SMOKE ANIMATIONS */
+        @keyframes puff-anim {
+            0% { opacity: 0; transform: translateY(0) scale(0.5); }
+            50% { opacity: 0.8; transform: translateY(-8px) scale(1); }
+            100% { opacity: 0; transform: translateY(-16px) scale(1.5); }
+        }
+        .smoke-puff { opacity: 0; transform-origin: center; }
+        .puff-1 { animation: puff-anim 2s infinite ease-out; animation-delay: 0s; }
+        .puff-2 { animation: puff-anim 2s infinite ease-out; animation-delay: 0.6s; }
+        .puff-3 { animation: puff-anim 2s infinite ease-out; animation-delay: 1.2s; }
 
         /* OVERLAYS */
         .overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.98); z-index: 100; flex-direction: column; align-items: center; padding-top: 60px; }
@@ -114,8 +130,12 @@
 
     <div id="suburb-display">
         <div style="width: 85%; height: 60px; position: relative; margin-top: -15px; margin-bottom: 15px; border-bottom: 2px solid #222;">
-            <div id="train-container" style="position: absolute; left: 0%; bottom: 0px; transition: left 1.5s ease-in-out, color 0.5s ease; color: #888;">
-                <svg width="70" height="50" viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <div id="train-container" style="position: absolute; left: 0%; bottom: 5px; transition: left 1.5s ease-in-out, color 0.5s ease; color: #888;">
+                <svg width="90" height="65" viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg" style="overflow: visible;">
+                    <circle class="smoke-puff puff-1" cx="17" cy="2" r="1.5" fill="#888" />
+                    <circle class="smoke-puff puff-2" cx="19" cy="1" r="2" fill="#888" />
+                    <circle class="smoke-puff puff-3" cx="21" cy="0" r="2.5" fill="#888" />
+                    
                     <path d="M2 4h7v2H2z" />
                     <path d="M3 6h5v10H3z M4 8h3v4H4z" fill-rule="evenodd" />
                     <path d="M8 10h10v6H8z" />
@@ -188,8 +208,8 @@
             const dateStr = now.toLocaleDateString('en-AU', { weekday: 'long', day: 'numeric', month: 'long' });
             document.getElementById('live-date').innerText = dateStr;
         }
-        setInterval(updateClock, 60000); // Update every minute
-        updateClock(); // Initial call
+        setInterval(updateClock, 60000); 
+        updateClock(); 
 
         function getCard(deg) { 
             if (deg === null || isNaN(deg)) return "--";
@@ -231,7 +251,9 @@
                     distSinceApi = calcDist(lastApiLat, lastApiLon, pos.coords.latitude, pos.coords.longitude);
                 }
 
-                // CHECK LOGIC: Moved > 25m AND > 5 seconds
+                // CHECK LOGIC:
+                // 1. First time load (lastApiLat is null) -> Force Update
+                // 2. Moved > 25m AND > 5 seconds
                 if (lastApiLat === null || (distSinceApi > 25 && Date.now() - lastApiCheck > 5000)) {
                     lastApiCheck = Date.now();
                     lastApiLat = pos.coords.latitude;
@@ -252,38 +274,41 @@
 
                 if (sub !== "Unknown") {
                     
-                    // --- NEW LOGIC START ---
-                    // If we are seeing a different suburb than displayed
+                    // --- STATIONARY FIX + ANTI-FLICKER ---
+                    
+                    // 1. If we have NO suburb displayed yet (First load), update IMMEDIATELY regardless of speed
+                    if (currentSub === "") {
+                         applySuburbChange(sub, lat, lon);
+                         candidateSub = "";
+                         return;
+                    }
+
+                    // 2. Standard Logic
                     if (sub !== currentSub) {
                         
-                        // Scenario 1: High Speed (> 50 km/h) - Update immediately
-                        // Assumption: If you are fast, you aren't lingering on a border.
+                        // Scenario A: High Speed (> 50 km/h) - Update immediately
                         if (currentSpeed > 50) {
                              applySuburbChange(sub, lat, lon);
                              candidateSub = ""; 
                         } 
-                        // Scenario 2: Low Speed - Requires Confirmation (Anti-Flicker)
+                        // Scenario B: Low Speed - Requires Confirmation
                         else {
                             if (sub === candidateSub) {
                                 candidateCount++;
-                                // If we've seen this new suburb twice in a row, switch.
                                 if (candidateCount >= 1) { 
                                     applySuburbChange(sub, lat, lon);
                                     candidateSub = "";
                                     candidateCount = 0;
                                 }
                             } else {
-                                // First time seeing this new potential suburb
                                 candidateSub = sub;
                                 candidateCount = 0;
                             }
                         }
                     } else {
-                        // We are still in the same suburb, reset counters
                         candidateSub = "";
                         candidateCount = 0;
                     }
-                    // --- NEW LOGIC END ---
                 }
             } catch (e) {}
         }
