@@ -8,11 +8,10 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="theme-color" content="#000000">
 
-    <title>Suburb Tracker v27</title>
+    <title>Suburb Tracker v28</title>
     <style>
         body { background-color: #000; color: #fff; font-family: 'Segoe UI', Arial, sans-serif; text-align: center; margin: 0; padding-top: 35px; display: flex; flex-direction: column; align-items: center; height: 100vh; overflow: hidden; }
         
-        /* INCREASED SPACING: Bottom margin doubled from 25px to 50px */
         .controls { width: 92%; display: flex; justify-content: space-between; margin-bottom: 50px; }
         .btn { background-color: #1a1a1a; color: #eee; border: 1px solid #333; padding: 12px; font-size: 0.9rem; border-radius: 12px; width: 47%; font-weight: bold; cursor: pointer; }
         .btn.active { background-color: #2e7d32; border-color: #4caf50; color: white; }
@@ -22,7 +21,6 @@
             position: relative;
             width: 100px; height: 100px;
             margin-top: 10px;
-            /* INCREASED SPACING: Bottom margin doubled from 40px to 80px */
             margin-bottom: 80px; 
         }
         #compass-box {
@@ -50,20 +48,16 @@
         
         .info-label { font-size: 1.2rem; color: #ffffff; text-transform: uppercase; font-weight: bold; margin-bottom: 5px; }
         .info-value { font-size: 1.45rem; font-weight: 900; color: #00ff66; letter-spacing: -0.5px; transition: opacity 0.8s ease; }
-        
-        /* FONT SIZE INCREASE: Yellow sub-text increased ~30% (0.9rem -> 1.2rem) */
         .sub-text { font-size: 1.2rem; color: #ffff00; font-weight: bold; display: block; margin-top: 2px; }
 
         /* MAIN DISPLAY AREA */
         #suburb-display { flex-grow: 1; display: flex; flex-direction: column; justify-content: center; width: 100%; align-items: center; }
         .suburb-name { font-size: 4rem; font-weight: 900; margin: 0; line-height: 0.9; text-transform: uppercase; transition: color 0.5s ease; }
 
-        /* LIVE DATE DISPLAY */
+        /* LIVE DATE DISPLAY - INCREASED SIZE */
         #live-date {
-            /* INCREASED SPACING: Margin top increased */
             margin-top: 40px;
-            /* FONT SIZE INCREASE: Increased ~30% (1.2rem -> 1.6rem) */
-            font-size: 1.6rem; 
+            font-size: 2.2rem; /* Massive size bump */
             color: #ffffff;
             font-weight: bold;
             text-transform: uppercase;
@@ -129,9 +123,9 @@
     </div>
 
     <div id="suburb-display">
-        <div style="width: 85%; height: 60px; position: relative; margin-top: -15px; margin-bottom: 15px; border-bottom: 2px solid #222;">
+        <div style="width: 85%; height: 90px; position: relative; margin-top: -15px; margin-bottom: 15px; border-bottom: 2px solid #222;">
             <div id="train-container" style="position: absolute; left: 0%; bottom: 5px; transition: left 1.5s ease-in-out, color 0.5s ease; color: #888;">
-                <svg width="90" height="65" viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg" style="overflow: visible;">
+                <svg width="120" height="80" viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg" style="overflow: visible;">
                     <circle class="smoke-puff puff-1" cx="17" cy="2" r="1.5" fill="#888" />
                     <circle class="smoke-puff puff-2" cx="19" cy="1" r="2" fill="#888" />
                     <circle class="smoke-puff puff-3" cx="21" cy="0" r="2.5" fill="#888" />
@@ -252,130 +246,4 @@
                 }
 
                 // CHECK LOGIC:
-                // 1. First time load (lastApiLat is null) -> Force Update
-                // 2. Moved > 25m AND > 5 seconds
-                if (lastApiLat === null || (distSinceApi > 25 && Date.now() - lastApiCheck > 5000)) {
-                    lastApiCheck = Date.now();
-                    lastApiLat = pos.coords.latitude;
-                    lastApiLon = pos.coords.longitude;
-                    updateLoc(pos.coords.latitude, pos.coords.longitude, s);
-                }
-            }, (err) => {
-                document.getElementById('last-updated').innerText = "GPS Error: " + err.message;
-            }, { enableHighAccuracy: true, maximumAge: 0 });
-        }
-
-        async function updateLoc(lat, lon, currentSpeed) {
-            try {
-                const res = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}&zoom=14`);
-                const data = await res.json();
-                let sub = data.address.suburb || data.address.town || data.address.village || "Unknown";
-                sub = sub.split(' ').map(w => w[0].toUpperCase() + w.slice(1).toLowerCase()).join(' ');
-
-                if (sub !== "Unknown") {
-                    
-                    // --- STATIONARY FIX + ANTI-FLICKER ---
-                    
-                    // 1. If we have NO suburb displayed yet (First load), update IMMEDIATELY regardless of speed
-                    if (currentSub === "") {
-                         applySuburbChange(sub, lat, lon);
-                         candidateSub = "";
-                         return;
-                    }
-
-                    // 2. Standard Logic
-                    if (sub !== currentSub) {
-                        
-                        // Scenario A: High Speed (> 50 km/h) - Update immediately
-                        if (currentSpeed > 50) {
-                             applySuburbChange(sub, lat, lon);
-                             candidateSub = ""; 
-                        } 
-                        // Scenario B: Low Speed - Requires Confirmation
-                        else {
-                            if (sub === candidateSub) {
-                                candidateCount++;
-                                if (candidateCount >= 1) { 
-                                    applySuburbChange(sub, lat, lon);
-                                    candidateSub = "";
-                                    candidateCount = 0;
-                                }
-                            } else {
-                                candidateSub = sub;
-                                candidateCount = 0;
-                            }
-                        }
-                    } else {
-                        candidateSub = "";
-                        candidateCount = 0;
-                    }
-                }
-            } catch (e) {}
-        }
-
-        async function applySuburbChange(sub, lat, lon) {
-            currentSub = sub;
-            
-            const wRes = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,wind_speed_10m,wind_direction_10m,uv_index&timezone=auto`);
-            const w = await wRes.json();
-            document.getElementById('temp-val').innerText = Math.round(w.current.temperature_2m) + "°";
-            document.getElementById('wind-val').innerHTML = `${Math.round(w.current.wind_speed_10m)}k<span class="sub-text">${getCard(w.current.wind_direction_10m)}</span>`;
-            document.getElementById('uv-val').innerText = w.current.uv_index.toFixed(1);
-            
-            const color = ["#FFD700", "#00FFFF", "#FF69B4", "#ADFF2F", "#FFA500"][Math.floor(Math.random() * 5)];
-            document.querySelector('.suburb-name').innerText = sub;
-            document.querySelector('.suburb-name').style.color = color;
-            
-            trainPos += 20;
-            if (trainPos > 85) trainPos = 0;
-            document.getElementById('train-container').style.left = trainPos + '%';
-            document.getElementById('train-container').style.color = color;
-            
-            const now = new Date();
-            const timeString = `${now.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}, ${now.toLocaleDateString('en-AU', {weekday:'short', day:'numeric', month:'short'})}`;
-            
-            history.unshift({ name: sub, color, time: timeString });
-            localStorage.setItem('peteTripLog', JSON.stringify(history));
-            document.getElementById('last-updated').innerText = `Updated: ${now.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}`;
-        }
-
-        function toggleHistory() {
-            const o = document.getElementById('history-overlay');
-            o.style.display = (o.style.display === "flex") ? "none" : "flex";
-            document.getElementById('log-content').innerHTML = history.map(h => `
-                <div class="history-item" style="border-left:5px solid ${h.color}">
-                    <div class="history-suburb" style="color:${h.color}">${h.name}</div>
-                    <div class="history-time">${h.time}</div>
-                </div>
-            `).join('');
-        }
-
-        function toggleAbout() {
-            const o = document.getElementById('about-overlay');
-            o.style.display = (o.style.display === "flex") ? "none" : "flex";
-        }
-
-        function clearLog() { if(confirm("Clear log?")) { history = []; localStorage.removeItem('peteTripLog'); toggleHistory(); } }
-        
-        async function toggleWake() { 
-            const b = document.getElementById('wake-btn');
-            if (!wakeLock) { 
-                try {
-                    wakeLock = await navigator.wakeLock.request('screen'); 
-                    b.classList.add('active');
-                } catch (err) {}
-            } else { 
-                wakeLock.release(); wakeLock = null; 
-                b.classList.remove('active');
-            } 
-        }
-
-        if ('serviceWorker' in navigator) {
-            window.addEventListener('load', () => {
-                const blob = new Blob(['self.addEventListener("fetch", (e) => e.respondWith(fetch(e.request)));'], {type: 'text/javascript'});
-                navigator.serviceWorker.register(URL.createObjectURL(blob));
-            });
-        }
-    </script>
-</body>
-</html>
+                // If it'
